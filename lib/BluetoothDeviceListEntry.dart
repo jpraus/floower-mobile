@@ -44,7 +44,7 @@ class BluetoothDeviceListEntry extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(device.name == device.name == '' ? device.id : device.name)
+                  child: Text(_devicename(device))
                 ),
               ),
               Row(
