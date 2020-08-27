@@ -1,16 +1,17 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class FloowerModel extends ChangeNotifier {
   //FlutterBlue flutterBlue = FlutterBlue.instance;
 
-  Color color;
+  Color _color;
 
-  void setColor(Color color) {
-    this.color = color;
-    notifyListeners();
+  Color get color {
+    return _color;
   }
 
-  Color getColor() {
-    return this.color;
+  void setColor(Color color) {
+    _color = color;
+    notifyListeners();
   }
 }

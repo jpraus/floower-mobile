@@ -5,6 +5,7 @@ import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'ble/ble_scanner.dart';
 import 'FloowerModel.dart';
 import 'ConnectRoute.dart';
 
@@ -17,23 +18,24 @@ void main() {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final _ble = FlutterReactiveBle();
-  final _scanner = BleScanner(_ble);
+  //final _scanner = BleScanner(_ble);
   //final _monitor = BleStatusMonitor(_ble);
   //final _connector = BleDeviceConnector(_ble);
   runApp(
     MultiProvider(
       providers: [
-        Provider.value(value: _scanner),
+        Provider.value(value: _ble),
+        //Provider.value(value: _scanner),
         //Provider.value(value: _monitor),
         //Provider.value(value: _connector),
-        StreamProvider<BleScannerState>(
+        /*StreamProvider<BleScannerState>(
           create: (_) => _scanner.state,
           initialData: const BleScannerState(
             discoveredDevices: [],
             scanIsInProgress: false,
           ),
-        ),
-       /* StreamProvider<BleStatus>(
+        ),*/
+        /*StreamProvider<BleStatus>(
           create: (_) => _monitor.state,
           initialData: BleStatus.unknown,
         ),
@@ -50,7 +52,7 @@ void main() {
         title: 'Floower',
 
         theme: CupertinoThemeData(
-          primaryColor: CupertinoColors.black,
+          primaryColor: CupertinoColors.activeBlue,
         ),
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
@@ -78,9 +80,11 @@ class HomeRoute extends StatelessWidget {
           },
         ),
       ),
-      child: ChangeNotifierProvider(
-        create: (context) => FloowerModel(),
-        child: Floower()
+      child: SafeArea(
+        child: ChangeNotifierProvider(
+          create: (context) => FloowerModel(),
+          child: Floower()
+        ),
       ),
     );
   }
@@ -100,7 +104,7 @@ class Floower extends StatelessWidget {
           builder: (context, model, child) {
             return Container(
               decoration: BoxDecoration(
-                  color: model.getColor()
+                color: model.color
               ),
               height: 40,
             );
