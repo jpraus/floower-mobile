@@ -18,6 +18,8 @@ void main() {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final _ble = FlutterReactiveBle();
+  _ble.logLevel = LogLevel.verbose;
+
   //final _scanner = BleScanner(_ble);
   //final _monitor = BleStatusMonitor(_ble);
   //final _connector = BleDeviceConnector(_ble);

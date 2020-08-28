@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:meta/meta.dart';
@@ -53,7 +54,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
   }
 
   void _startScanning() {
-    _bleScanner.startScan([]);
+    _bleScanner.startScan(timeout: Duration(seconds: 30));
   }
 
   void _stopScanning() {
@@ -74,43 +75,47 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
       ),
       builder: (context, scannerState) => CupertinoPageScaffold(
         // always has data due to initialData
+        backgroundColor: CupertinoColors.extraLightBackgroundGray,
         navigationBar: CupertinoNavigationBar(
-          middle: scannerState.data.scanIsInProgress
-              ? Text('Discovering Floowers ' + scannerState.data.discoveredDevices.length.toString())
-              : Text('Connect Your Floower'),
-          trailing: scannerState.data.scanIsInProgress
-              ? GestureDetector(
-            child: CupertinoActivityIndicator(),
-            onTap: _stopScanning,
-          )
-              : GestureDetector(
-            child: Icon(CupertinoIcons.refresh),
-            onTap: _startScanning,
+          middle: Text('Connect Your Floower'),
+        ),
+        child: SafeArea(
+          child: ListView(
+            children: _buildList(scannerState.data),
           ),
         ),
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverSafeArea(
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index < scannerState.data.discoveredDevices.length) {
-                    return new BluetoothDeviceListEntry(
-                      device: scannerState.data.discoveredDevices[index],
-                      onTap: _onDeviceTap,
-                    );
-                  }
-                  return null;
-                }),
-              ),
-            )
-          ],
-        ),
-        /*child: ListView(
-          children: widget.scannerState.discoveredDevices
-            .map((device) => new BluetoothDeviceListEntry(device: device))
-            .toList(),
-        ),*/
       ),
     );
+  }
+
+  List<Widget> _buildList(BleScannerState scannerState) {
+    List<Widget> list = [];
+
+    list.add(SizedBox(height: 30));
+    list.add(GestureDetector(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Row(
+          children: <Widget>[
+            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: TextStyle(
+              fontSize: 14,
+              color: CupertinoColors.secondaryLabel)),
+            SizedBox(width: 10),
+            scannerState.scanIsInProgress ? CupertinoActivityIndicator() : Icon(CupertinoIcons.refresh),
+          ],
+        ),
+      ),
+      onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
+    ));
+
+    for (int index = 0; index < scannerState.discoveredDevices.length; index++) {
+      list.add(new BluetoothDeviceListEntry(
+        device: scannerState.discoveredDevices[index],
+        onTap: _onDeviceTap,
+        isFirst: index == 0,
+        isLast: index == scannerState.discoveredDevices.length - 1,
+      ));
+    }
+    return list;
   }
 }

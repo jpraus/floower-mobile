@@ -9,41 +9,45 @@ class BluetoothDeviceListEntry extends StatelessWidget {
   final DiscoveredDevice device;
   final GestureTapCallback onTap;
   final GestureLongPressCallback onLongPress;
+  final bool isLast;
+  final bool isFirst;
 
   const BluetoothDeviceListEntry({
     Key key,
-    @required
-    this.device,
+    @required this.device,
     this.onTap,
-    this.onLongPress
-  }) : super(key: key);
+    this.onLongPress,
+    this.isLast = false,
+    this.isFirst = false
+}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     //Widget w = new Expanded(child: Text(device.name ?? "Unknown device"));
-    return SafeArea(
-      top: false,
-      bottom: false,
-      minimum: const EdgeInsets.only(
-        left: 16,
-        top: 8,
-        bottom: 8,
-        right: 8,
-      ),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.only(
-            top: 5,
-            bottom: 5
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.only(left: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: isFirst ? const BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray) : BorderSide.none,
+            bottom: isLast ? const BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray) : BorderSide.none
           ),
-          child:Row(
+        ),
+        child: Container(
+          padding: EdgeInsets.only(right: 18, top: 8, bottom: 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: isLast ? BorderSide.none : const BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray)
+            )
+          ),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(CupertinoIcons.bluetooth, size: 30),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.only(right: 12),
                   child: Text(_devicename(device))
                 ),
               ),
