@@ -27,6 +27,10 @@ void main() {
     MultiProvider(
       providers: [
         Provider.value(value: _ble),
+        StreamProvider<BleStatus>(
+          create: (_) => _ble.statusStream,
+          initialData: BleStatus.unknown,
+        ),
         //Provider.value(value: _scanner),
         //Provider.value(value: _monitor),
         //Provider.value(value: _connector),
@@ -36,10 +40,6 @@ void main() {
             discoveredDevices: [],
             scanIsInProgress: false,
           ),
-        ),*/
-        /*StreamProvider<BleStatus>(
-          create: (_) => _monitor.state,
-          initialData: BleStatus.unknown,
         ),
         StreamProvider<ConnectionStateUpdate>(
           create: (_) => _connector.state,
