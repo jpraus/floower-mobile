@@ -219,6 +219,7 @@ class _ScanScreenState extends State<_ScanScreen> {
   List<Widget> _buildScanList(BleScannerState scannerState, FloowerModel floowerModel) {
     ConnectionStateUpdate deviceState = floowerModel.deviceConnectionState;
     List<Widget> list = [];
+    int discoveredDevicesCount = scannerState.discoveredDevices.length;
 
     if (deviceState != null && deviceState.connectionState != DeviceConnectionState.disconnected) {
       list.add(const SizedBox(height: 35));
@@ -232,6 +233,7 @@ class _ScanScreenState extends State<_ScanScreen> {
         onDisconnect: _onDeviceDisconnect
         //onTap: ,
       ));
+      discoveredDevicesCount = discoveredDevicesCount - 1;
     }
 
     list.add(const SizedBox(height: 35));
@@ -249,12 +251,16 @@ class _ScanScreenState extends State<_ScanScreen> {
       onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
     ));
 
-    for (int index = 0; index < scannerState.discoveredDevices.length; index++) {
+    int index = 0;
+    for (DiscoveredDevice device in scannerState.discoveredDevices) {
+      if (deviceState != null && device.id == deviceState.deviceId) {
+        continue; // connected device
+      }
       list.add(new DeviceListItem(
-        device: scannerState.discoveredDevices[index],
+        device: device,
         onTap: _onDiscoveredDeviceTap,
         isFirst: index == 0,
-        isLast: index == scannerState.discoveredDevices.length - 1,
+        isLast: index == discoveredDevicesCount - 1,
       ));
     }
 
