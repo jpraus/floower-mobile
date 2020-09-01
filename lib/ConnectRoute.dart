@@ -262,6 +262,7 @@ class _ScanScreenState extends State<_ScanScreen> {
         isFirst: index == 0,
         isLast: index == discoveredDevicesCount - 1,
       ));
+      index++;
     }
 
     return list;

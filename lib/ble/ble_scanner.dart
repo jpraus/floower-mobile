@@ -58,6 +58,8 @@ class BleScanner {
   }
 
   Future<void> dispose() async {
+    _timeoutTimer?.cancel();
+    await _subscription?.cancel();
     await _stateStreamController.close();
   }
 }
