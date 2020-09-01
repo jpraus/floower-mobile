@@ -4,19 +4,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
-class BluetoothDeviceListEntry extends StatelessWidget {
+class DeviceListItem extends StatelessWidget {
 
   final DiscoveredDevice device;
-  final GestureTapCallback onTap;
-  final GestureLongPressCallback onLongPress;
+  final void Function(DiscoveredDevice device) onTap;
   final bool isLast;
   final bool isFirst;
 
-  const BluetoothDeviceListEntry({
+  const DeviceListItem({
     Key key,
     @required this.device,
     this.onTap,
-    this.onLongPress,
     this.isLast = false,
     this.isFirst = false
 }) : super(key: key);
@@ -25,7 +23,7 @@ class BluetoothDeviceListEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     //Widget w = new Expanded(child: Text(device.name ?? "Unknown device"));
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => onTap(device),
       child: Container(
         padding: EdgeInsets.only(left: 18),
         decoration: BoxDecoration(
@@ -36,7 +34,7 @@ class BluetoothDeviceListEntry extends StatelessWidget {
           ),
         ),
         child: Container(
-          padding: EdgeInsets.only(right: 18, top: 8, bottom: 8),
+          padding: EdgeInsets.only(right: 18, top: 18, bottom: 18),
           decoration: BoxDecoration(
             border: Border(
               bottom: isLast ? BorderSide.none : const BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray)
@@ -46,19 +44,13 @@ class BluetoothDeviceListEntry extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Text(_devicename(device))
-                ),
+                child: Text(_devicename(device))
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   device.rssi != null
-                    ? Container(
-                      margin: new EdgeInsets.all(8.0),
-                      child: Text(device.rssi.toString() + ' dBm', style: _computeTextStyle(device.rssi)),
-                    )
+                    ? Text(device.rssi.toString() + ' dBm', style: _computeTextStyle(device.rssi))
                     : Container(width: 0, height: 0),
                   /*device.isConnected
                   ? Icon(Icons.import_export)

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:Floower/data/FloowerModel.dart';
+import 'package:Floower/main.dart';
+import 'package:Floower/ui/ConnectedDevice.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,7 +12,8 @@ import 'package:provider/provider.dart';
 import 'package:system_setting/system_setting.dart';
 
 import 'ble/ble_scanner.dart';
-import 'BluetoothDeviceListEntry.dart';
+import 'ui/DeviceListItem.dart';
+import 'ui/Commons.dart';
 
 class ConnectRoute extends StatelessWidget {
   static const ROUTE_NAME = '/connect';
@@ -33,14 +37,16 @@ class ConnectRoute extends StatelessWidget {
 }
 
 class _DiscoverScreen extends StatefulWidget {
-  const _DiscoverScreen({@required this.ble})
-      : assert(ble != null);
+  const _DiscoverScreen({
+    @required this.ble,
+    Key key
+  }) : assert(ble != null),
+        super(key: key);
 
   final FlutterReactiveBle ble;
 
   @override
   _DiscoverScreenState createState() {
-    print('_DiscoverScreenState');
     return _DiscoverScreenState();
   }
 }
@@ -143,8 +149,11 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
 }
 
 class _ScanScreen extends StatefulWidget {
-  const _ScanScreen({@required this.ble})
-      : assert(ble != null);
+  const _ScanScreen({
+    @required this.ble,
+    Key key
+  }) : assert(ble != null),
+        super(key: key);
 
   final FlutterReactiveBle ble;
 
@@ -182,26 +191,48 @@ class _ScanScreenState extends State<_ScanScreen> {
     _bleScanner.stopScan();
   }
 
-  void _onDeviceTap() {
+  void _onDiscoveredDeviceTap(DiscoveredDevice device) async {
+    _stopScanning();
+    Provider.of<FloowerModel>(context, listen: false).connect(device);
+  }
 
+  void _onDeviceDisconnect() async {
+    Provider.of<FloowerModel>(context, listen: false).disconnect();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<BleScannerState>(
+    return Consumer<FloowerModel>(
+      builder: (_, floowerModel, __) => StreamBuilder<BleScannerState>(
         stream: _bleScanner.state,
         initialData: const BleScannerState(
           discoveredDevices: [],
           scanIsInProgress: false,
         ),
-        builder: (context, scannerState) => ListView(
-          children: _buildScanList(scannerState.data),
+        builder: (_, scannerState) => ListView(
+          children: _buildScanList(scannerState.data, floowerModel),
         ),
+      ),
     );
   }
 
-  List<Widget> _buildScanList(BleScannerState scannerState) {
+  List<Widget> _buildScanList(BleScannerState scannerState, FloowerModel floowerModel) {
+    ConnectionStateUpdate deviceState = floowerModel.deviceConnectionState;
     List<Widget> list = [];
+
+    if (deviceState != null && deviceState.connectionState != DeviceConnectionState.disconnected) {
+      list.add(const SizedBox(height: 35));
+      list.add(Padding(
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
+      ));
+      list.add(ConnectedDevice(
+        device: floowerModel.device,
+        connectionState: floowerModel.deviceConnectionState,
+        onDisconnect: _onDeviceDisconnect
+        //onTap: ,
+      ));
+    }
 
     list.add(const SizedBox(height: 35));
     list.add(GestureDetector(
@@ -209,9 +240,7 @@ class _ScanScreenState extends State<_ScanScreen> {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Row(
           children: <Widget>[
-            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: TextStyle(
-                fontSize: 14,
-                color: CupertinoColors.secondaryLabel)),
+            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: FloowerTextTheme.listLabel),
             const SizedBox(width: 10),
             scannerState.scanIsInProgress ? CupertinoActivityIndicator() : Icon(CupertinoIcons.refresh),
           ],
@@ -221,9 +250,9 @@ class _ScanScreenState extends State<_ScanScreen> {
     ));
 
     for (int index = 0; index < scannerState.discoveredDevices.length; index++) {
-      list.add(new BluetoothDeviceListEntry(
+      list.add(new DeviceListItem(
         device: scannerState.discoveredDevices[index],
-        onTap: _onDeviceTap,
+        onTap: _onDiscoveredDeviceTap,
         isFirst: index == 0,
         isLast: index == scannerState.discoveredDevices.length - 1,
       ));

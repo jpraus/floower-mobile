@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'ble/ble_scanner.dart';
-import 'FloowerModel.dart';
+import 'data/FloowerModel.dart';
 import 'ConnectRoute.dart';
 
 void main() {
@@ -18,6 +18,7 @@ void main() {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final _ble = FlutterReactiveBle();
+  final floowerModel = FloowerModel(_ble);
   _ble.logLevel = LogLevel.verbose;
 
   //final _scanner = BleScanner(_ble);
@@ -26,6 +27,9 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<FloowerModel>(
+            create: (context) => floowerModel
+        ),
         Provider.value(value: _ble),
         StreamProvider<BleStatus>(
           create: (_) => _ble.statusStream,
@@ -52,9 +56,8 @@ void main() {
       ],
       child: CupertinoApp(
         title: 'Floower',
-
         theme: CupertinoThemeData(
-          primaryColor: CupertinoColors.activeBlue,
+          primaryColor: CupertinoColors.activeBlue
         ),
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
@@ -83,10 +86,7 @@ class HomeRoute extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        child: ChangeNotifierProvider(
-          create: (context) => FloowerModel(),
-          child: Floower()
-        ),
+        child: Floower(),
       ),
     );
   }
