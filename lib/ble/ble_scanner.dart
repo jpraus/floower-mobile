@@ -23,7 +23,6 @@ class BleScanner {
     _subscription?.cancel();
     _subscription = _ble.scanForDevices(withServices: serviceIds).listen((device) {
       final knownDeviceIndex = _devices.indexWhere((d) => d.id == device.id);
-      print('Device discovered: ' + device.name);
       if (knownDeviceIndex >= 0) {
         _devices[knownDeviceIndex] = device;
       } else {
