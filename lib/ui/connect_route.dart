@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:Floower/data/FloowerModel.dart';
-import 'package:Floower/main.dart';
-import 'package:Floower/ui/ConnectedDevice.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,9 +8,11 @@ import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
 import 'package:system_setting/system_setting.dart';
 
-import 'ble/ble_scanner.dart';
-import 'ui/DeviceListItem.dart';
-import 'ui/Commons.dart';
+import '../ble/ble_scanner.dart';
+import 'device_list_item.dart';
+import 'commons.dart';
+import 'package:Floower/logic/floower_connector.dart';
+import 'package:Floower/ui/connected_device.dart';
 
 class ConnectRoute extends StatelessWidget {
   static const ROUTE_NAME = '/connect';
@@ -193,16 +192,16 @@ class _ScanScreenState extends State<_ScanScreen> {
 
   void _onDiscoveredDeviceTap(DiscoveredDevice device) async {
     _stopScanning();
-    Provider.of<FloowerModel>(context, listen: false).connect(device);
+    Provider.of<FloowerConnector>(context, listen: false).connect(device);
   }
 
   void _onDeviceDisconnect() async {
-    Provider.of<FloowerModel>(context, listen: false).disconnect();
+    Provider.of<FloowerConnector>(context, listen: false).disconnect();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<FloowerModel>(
+    return Consumer<FloowerConnector>(
       builder: (_, floowerModel, __) => StreamBuilder<BleScannerState>(
         stream: _bleScanner.state,
         initialData: const BleScannerState(
@@ -216,23 +215,21 @@ class _ScanScreenState extends State<_ScanScreen> {
     );
   }
 
-  List<Widget> _buildScanList(BleScannerState scannerState, FloowerModel floowerModel) {
-    ConnectionStateUpdate deviceState = floowerModel.deviceConnectionState;
+  List<Widget> _buildScanList(BleScannerState scannerState, FloowerConnector floowerConnector) {
     bool deviceConnected = false;
     List<Widget> list = [];
     int discoveredDevicesCount = scannerState.discoveredDevices.length;
 
-    if (deviceState != null && deviceState.connectionState != DeviceConnectionState.disconnected) {
+    if (floowerConnector.connectionState != FloowerConnectionState.disconnected) {
       list.add(const SizedBox(height: 35));
       list.add(Padding(
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
       ));
       list.add(ConnectedDevice(
-        device: floowerModel.device,
-        connectionState: floowerModel.deviceConnectionState,
+        device: floowerConnector.device,
+        connectionState: floowerConnector.connectionState,
         onDisconnect: _onDeviceDisconnect
-        //onTap: ,
       ));
       discoveredDevicesCount = discoveredDevicesCount - 1;
       deviceConnected = true;
@@ -255,7 +252,7 @@ class _ScanScreenState extends State<_ScanScreen> {
 
     int index = 0;
     for (DiscoveredDevice device in scannerState.discoveredDevices) {
-      if (deviceConnected && device.id == deviceState.deviceId) {
+      if (deviceConnected && device.id == floowerConnector.device.id) {
         continue; // connected device
       }
       list.add(new DeviceListItem(

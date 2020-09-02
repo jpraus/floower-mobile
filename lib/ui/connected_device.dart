@@ -4,10 +4,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
+import 'package:Floower/logic/floower_connector.dart';
+
 class ConnectedDevice extends StatelessWidget {
 
   final DiscoveredDevice device;
-  final ConnectionStateUpdate connectionState;
+  final FloowerConnectionState connectionState;
   final void Function() onDisconnect;
 
   const ConnectedDevice({
@@ -21,7 +23,7 @@ class ConnectedDevice extends StatelessWidget {
   Widget build(BuildContext context) {
     //Widget w = new Expanded(child: Text(device.name ?? "Unknown device"));
     return GestureDetector(
-      //onTap: () => onTap,
+      onTap: () => connectionState != FloowerConnectionState.connected ? onDisconnect : null,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         decoration: const BoxDecoration(
@@ -48,14 +50,15 @@ class ConnectedDevice extends StatelessWidget {
   }
 
   Widget _deviceStateAction(BuildContext context) {
-    switch (connectionState.connectionState) {
-      case DeviceConnectionState.connected:
+    switch (connectionState) {
+      case FloowerConnectionState.connected:
         return GestureDetector(
           child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
           onTap: onDisconnect,
         );
 
-      case DeviceConnectionState.connecting:
+      case FloowerConnectionState.connecting:
+      case FloowerConnectionState.validating:
         return Row(
           children: [
             Text("Connecting"),
@@ -64,7 +67,7 @@ class ConnectedDevice extends StatelessWidget {
           ],
         );
 
-      case DeviceConnectionState.disconnecting:
+      case FloowerConnectionState.disconnecting:
         return Text("Disconnecting");
     }
     return Container();

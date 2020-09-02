@@ -1,3 +1,4 @@
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:flutter/cupertino.dart';
 //import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -5,9 +6,9 @@ import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'ble/ble_scanner.dart';
-import 'data/FloowerModel.dart';
-import 'ConnectRoute.dart';
+import 'logic/floower_model.dart';
+import 'logic/floower_connector.dart';
+import 'ui/connect_route.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,41 +18,24 @@ void main() {
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-  final _ble = FlutterReactiveBle();
-  final floowerModel = FloowerModel(_ble);
-  _ble.logLevel = LogLevel.verbose;
+  final ble = FlutterReactiveBle();
+  final floowerConnector = FloowerConnector(ble);
+  final floowerModel = FloowerModel(floowerConnector);
+  ble.logLevel = LogLevel.verbose;
 
-  //final _scanner = BleScanner(_ble);
-  //final _monitor = BleStatusMonitor(_ble);
-  //final _connector = BleDeviceConnector(_ble);
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<FloowerModel>(
             create: (context) => floowerModel
         ),
-        Provider.value(value: _ble),
-        StreamProvider<BleStatus>(
-          create: (_) => _ble.statusStream,
+        ChangeNotifierProvider<FloowerConnector>(
+            create: (context) => floowerConnector
+        ),
+        Provider.value(value: ble),
+        /*StreamProvider<BleStatus>(
+          create: (_) => ble.statusStream,
           initialData: BleStatus.unknown,
-        ),
-        //Provider.value(value: _scanner),
-        //Provider.value(value: _monitor),
-        //Provider.value(value: _connector),
-        /*StreamProvider<BleScannerState>(
-          create: (_) => _scanner.state,
-          initialData: const BleScannerState(
-            discoveredDevices: [],
-            scanIsInProgress: false,
-          ),
-        ),
-        StreamProvider<ConnectionStateUpdate>(
-          create: (_) => _connector.state,
-          initialData: const ConnectionStateUpdate(
-            deviceId: 'Unknown device',
-            connectionState: DeviceConnectionState.disconnected,
-            failure: null,
-          ),
         ),*/
       ],
       child: CupertinoApp(
