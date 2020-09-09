@@ -26,6 +26,10 @@ class FloowerModel extends ChangeNotifier {
       _floowerConnector.sendColor(color);
     });
   }
+
+  void setOpen() {
+
+  }
 }
 
 class Debouncer {

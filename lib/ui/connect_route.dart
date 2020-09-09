@@ -8,11 +8,11 @@ import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
 import 'package:system_setting/system_setting.dart';
 
-import '../ble/ble_scanner.dart';
-import 'device_list_item.dart';
 import 'commons.dart';
+import 'package:Floower/ble/ble_scanner.dart';
 import 'package:Floower/logic/floower_connector.dart';
-import 'package:Floower/ui/connected_device.dart';
+import 'package:Floower/ui/device.dart';
+import 'package:Floower/ui/cupertino_list.dart';
 
 class ConnectRoute extends StatelessWidget {
   static const ROUTE_NAME = '/connect';
@@ -116,7 +116,10 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
       case BleStatus.unknown:
       case BleStatus.unsupported:
         // ble dead screen
-        return Container();
+        return _buildBluetoothUnavailableScreen(
+            title: 'Bluetooth not supported',
+            message: 'This device seems to not support Bluetooth, there is no way how to connect to your Floower.'
+        );
     }
   }
 
@@ -135,9 +138,11 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
             const SizedBox(height: 20),
             Text(message, style: TextStyle(color: CupertinoColors.inactiveGray), textAlign: TextAlign.center),
             const SizedBox(height: 20),
-            CupertinoButton.filled(
-              child: Text(buttonText),
-              onPressed: onButtonPressed,
+            Container(
+              child: buttonText != null ? CupertinoButton.filled(
+                child: Text(buttonText),
+                onPressed: onButtonPressed,
+              ) : null,
             ),
             const SizedBox(height: 40),
           ],
@@ -209,34 +214,38 @@ class _ScanScreenState extends State<_ScanScreen> {
           scanIsInProgress: false,
         ),
         builder: (_, scannerState) => ListView(
-          children: _buildScanList(scannerState.data, floowerModel),
+          children: _buildScanContent(scannerState.data, floowerModel),
         ),
       ),
     );
   }
 
-  List<Widget> _buildScanList(BleScannerState scannerState, FloowerConnector floowerConnector) {
+  List<Widget> _buildScanContent(BleScannerState scannerState, FloowerConnector floowerConnector) {
     bool deviceConnected = false;
-    List<Widget> list = [];
-    int discoveredDevicesCount = scannerState.discoveredDevices.length;
+    List<Widget> column = [];
 
+    // connected devices
     if (floowerConnector.connectionState != FloowerConnectionState.disconnected) {
-      list.add(const SizedBox(height: 35));
-      list.add(Padding(
+      column.add(const SizedBox(height: 35));
+      column.add(Padding(
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
       ));
-      list.add(ConnectedDevice(
-        device: floowerConnector.device,
-        connectionState: floowerConnector.connectionState,
-        onDisconnect: _onDeviceDisconnect
+      column.add(CupertinoList(
+        children: [
+          ConnectedDeviceListItem(
+            device: floowerConnector.device,
+            connectionState: floowerConnector.connectionState,
+            onDisconnect: _onDeviceDisconnect
+          )
+        ],
       ));
-      discoveredDevicesCount = discoveredDevicesCount - 1;
       deviceConnected = true;
     }
 
-    list.add(const SizedBox(height: 35));
-    list.add(GestureDetector(
+    // discover devices
+    column.add(const SizedBox(height: 35));
+    column.add(GestureDetector(
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Row(
@@ -250,20 +259,27 @@ class _ScanScreenState extends State<_ScanScreen> {
       onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
     ));
 
-    int index = 0;
+    // discovered devices
+    List<Widget> discoveredDevices = [];
     for (DiscoveredDevice device in scannerState.discoveredDevices) {
-      if (deviceConnected && device.id == floowerConnector.device.id) {
-        continue; // connected device
+      if (floowerConnector.connectionState == FloowerConnectionState.disconnected || device.id != floowerConnector.device.id) {
+        discoveredDevices.add(new DiscoveredDeviceListItem(
+            device: device,
+            onTap: _onDiscoveredDeviceTap
+        ));
+        // skip connected devices
       }
-      list.add(new DeviceListItem(
-        device: device,
-        onTap: _onDiscoveredDeviceTap,
-        isFirst: index == 0,
-        isLast: index == discoveredDevicesCount - 1,
+    }
+    column.add(CupertinoList(
+      children: discoveredDevices
+    ));
+    if (!discoveredDevices.isEmpty) {
+      column.add(Padding(
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        child: const Text("Tap the device to connected", style: FloowerTextTheme.listLabel),
       ));
-      index++;
     }
 
-    return list;
+    return column;
   }
 }

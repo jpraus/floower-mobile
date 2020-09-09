@@ -56,7 +56,7 @@ class FloowerConnector extends ChangeNotifier {
   }
 
   Future<Color> readColor() async {
-    assert(connectionState == FloowerConnectionState.connected);
+    //assert(connectionState == FloowerConnectionState.connected);
     print("Getting color");
 
     return await _ble.readCharacteristic(QualifiedCharacteristic(
@@ -116,30 +116,34 @@ class FloowerConnector extends ChangeNotifier {
   void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
     switch (stateUpdate.connectionState) {
       case DeviceConnectionState.connected:
-        // TODO: verify is device Floower
         _onDeviceConnected(_device);
-        _connectionState = FloowerConnectionState.connected;
         break;
 
       case DeviceConnectionState.connecting:
         _connectionState = FloowerConnectionState.connecting;
+        notifyListeners();
         break;
 
       case DeviceConnectionState.disconnecting:
         _connectionState = FloowerConnectionState.disconnecting;
+        notifyListeners();
         break;
 
       case DeviceConnectionState.disconnected:
         _connectionState = FloowerConnectionState.disconnected;
+        notifyListeners();
         break;
     }
-    notifyListeners();
   }
 
   void _onDeviceConnected(device) async {
+    // TODO: verify is device Floower
     await _characteristicValuesSubscription?.cancel();
     _characteristicValuesSubscription = _ble.characteristicValueStream
         .listen(_onCharacteristicValue);
+
+    _connectionState = FloowerConnectionState.verifying;
+    notifyListeners();
 
     /*_ble.subscribeToCharacteristic(QualifiedCharacteristic(
       deviceId: _device.id,
@@ -148,6 +152,9 @@ class FloowerConnector extends ChangeNotifier {
     ));*/
 
     await readColor();
+
+    _connectionState = FloowerConnectionState.connected;
+    notifyListeners();
 
     print("Connected to device");
   }
@@ -163,7 +170,7 @@ enum FloowerConnectionState {
   connecting,
 
   /// Checking if device has Floower API
-  validating,
+  verifying,
 
   /// Connection is established.
   connected,

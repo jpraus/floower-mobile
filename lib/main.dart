@@ -1,5 +1,6 @@
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 //import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
@@ -63,6 +64,7 @@ class HomeRoute extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         middle: Image.asset('assets/images/floower.png'),
         trailing: GestureDetector(
+          //child: Icon(CupertinoIcons.loop_thick),
           child: Icon(CupertinoIcons.gear),
           onTap: () {
             Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
@@ -122,6 +124,10 @@ class Floower extends StatelessWidget {
                   //onChanged: _onColorPickerChanged
                 ),
               ),
+              CupertinoButton.filled(
+                child: Text("Open / Close"),
+                onPressed: () => Provider.of<FloowerModel>(context, listen: false).setOpen(),
+              )
             ],
           ),
         ),
