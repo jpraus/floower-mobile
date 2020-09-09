@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -52,10 +54,8 @@ class CupertinoList extends StatelessWidget {
         decoration: const BoxDecoration(
           color: CupertinoColors.white,
           border: Border(
-              top: BorderSide(
-                  width: 1, color: CupertinoColors.lightBackgroundGray),
-              bottom: BorderSide(
-                  width: 1, color: CupertinoColors.lightBackgroundGray)
+            top: BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray),
+            bottom: BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray)
           ),
         ),
         child: Column(
@@ -83,7 +83,7 @@ class CupertinoList extends StatelessWidget {
   }
 }
 
-class CupertinoListItem extends StatelessWidget {
+class CupertinoListItem extends StatefulWidget {
 
   final Widget title;
   final Widget trailing;
@@ -97,19 +97,50 @@ class CupertinoListItem extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<StatefulWidget> createState() {
+    return _CupertinoListItemState();
+  }
+}
+
+class _CupertinoListItemState extends State<CupertinoListItem> {
+
+  Color _color = Colors.white;
+
+  void _onTapDown(TapDownDetails tapDownDetails) {
+    setState(() => _color = CupertinoColors.lightBackgroundGray);
+  }
+
+  void _onTapUp(TapUpDetails tapUpDetails) {
+    setState(() => _color = CupertinoColors.white);
+  }
+
+  void _onTapCancel() {
+    setState(() => _color = CupertinoColors.white);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.only(right: 18, top: 18, bottom: 18),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-              child: title
-            ),
-            trailing != null ? trailing : SizedBox(width: 0)
-          ],
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: widget.onTap != null ? widget.onTap : null,
+      child: AnimatedContainer(
+        decoration: BoxDecoration(
+          color: _color
+        ),
+        duration: Duration(milliseconds: 50),
+        child: Padding(
+          padding: EdgeInsets.only(right: 18, top: 18, bottom: 18),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                child: widget.title
+              ),
+              widget.trailing != null ? widget.trailing : SizedBox(width: 0)
+            ],
+          ),
         ),
       ),
     );

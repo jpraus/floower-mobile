@@ -28,17 +28,9 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<FloowerModel>(
-            create: (context) => floowerModel
-        ),
-        ChangeNotifierProvider<FloowerConnector>(
-            create: (context) => floowerConnector
-        ),
-        Provider.value(value: ble),
-        /*StreamProvider<BleStatus>(
-          create: (_) => ble.statusStream,
-          initialData: BleStatus.unknown,
-        ),*/
+        ChangeNotifierProvider<FloowerModel>.value(value: floowerModel),
+        ChangeNotifierProvider<FloowerConnector>.value(value: floowerConnector),
+        Provider.value(value: ble)
       ],
       child: CupertinoApp(
         title: 'Floower',
@@ -64,14 +56,16 @@ class HomeRoute extends StatelessWidget {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.white,
       navigationBar: CupertinoNavigationBar(
-        middle: Image.asset('assets/images/floower-trnsp.png', height: 20),
-        trailing: GestureDetector(
-          //child: Icon(CupertinoIcons.loop_thick),
-          child: Icon(CupertinoIcons.gear),
-          onTap: () {
-            Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
-            //Navigator.pushNamed(context, SettingsRoute.ROUTE_NAME);
-          },
+        middle: Image.asset('assets/images/floower-trnsp.png', height: 18),
+        trailing: Consumer<FloowerModel>(
+          builder: (context, model, child) {
+            return model.connected
+              ? GestureDetector(
+                child: Icon(CupertinoIcons.gear),
+                onTap: () => Navigator.pushNamed(context, SettingsRoute.ROUTE_NAME),
+              )
+              : Container(width: 0, height: 0);
+          }
         ),
       ),
       child: SafeArea(
@@ -82,6 +76,7 @@ class HomeRoute extends StatelessWidget {
 }
 
 class Floower extends StatelessWidget {
+
   const Floower({ Key key }) : super(key: key);
 
   @override
@@ -89,52 +84,51 @@ class Floower extends StatelessWidget {
     assert(debugCheckHasMediaQuery(context));
     final MediaQueryData data = MediaQuery.of(context);
 
-    return Column(
-      children: <Widget>[
-        Consumer<FloowerModel>(
-          builder: (context, model, child) {
-            return Container(
-              decoration: BoxDecoration(
-                color: model.color
+    return Consumer<FloowerModel>(
+      builder: (context, model, child) {
+        return Stack(
+          children: <Widget>[
+            Center(
+              child: Image(
+                image: model.connected
+                  ? AssetImage("assets/images/floower-off.png")
+                  : AssetImage("assets/images/floower-bw.png"),
               ),
-              height: 40,
-            );
-          }
-        ),
-        Expanded (
-          child: Stack(
-            children: <Widget>[
-              Container(
-                padding: EdgeInsets.only(top: 40, bottom: 20),
-                alignment: Alignment.center,
-                constraints: BoxConstraints.expand(),
-                child: FittedBox(
-                  fit: BoxFit.fill,
-                  child: Image(
-                    image: AssetImage("assets/images/siluet.png"),
-                  ),
-                ),
+            ),
+            /*Container(
+              alignment: Alignment.topCenter,
+              child: CircleColorPicker(
+                //initialColor: Colors.blue,
+                size: const Size(250, 250), // TODO
+                textStyle: const TextStyle(fontSize: 0),
+                //strokeWidth: 16,
+                //thumbSize: 36,
+                onChanged: (color) => Provider.of<FloowerModel>(context, listen: false).setColor(color),
+                //onChanged: _onColorPickerChanged
               ),
-              Container(
-                alignment: Alignment.topCenter,
-                child: CircleColorPicker(
-                  //initialColor: Colors.blue,
-                  size: const Size(250, 250), // TODO
-                  textStyle: const TextStyle(fontSize: 0),
-                  //strokeWidth: 16,
-                  //thumbSize: 36,
-                  onChanged: (color) => Provider.of<FloowerModel>(context, listen: false).setColor(color),
-                  //onChanged: _onColorPickerChanged
-                ),
-              ),
-              CupertinoButton.filled(
-                child: Text("Open / Close"),
-                onPressed: () => Provider.of<FloowerModel>(context, listen: false).setOpen(),
-              )
-            ],
-          ),
-        ),
-      ],
+            ),*/
+            Center(
+              child: !model.connected ? Container(
+                padding: EdgeInsets.all(18),
+                color: CupertinoColors.white,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Not connected"),
+                    SizedBox(height: 18),
+                    CupertinoButton.filled(
+                      child: Text("Connect"),
+                      onPressed: () =>
+                          Navigator.pushNamed(
+                              context, ConnectRoute.ROUTE_NAME),
+                    ),
+                  ],
+                )
+              ) : null,
+            ),
+          ],
+        );
+      },
     );
   }
 

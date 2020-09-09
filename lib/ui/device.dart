@@ -23,7 +23,7 @@ class ConnectedDeviceListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoListItem(
-      onTap: () => connectionState != FloowerConnectionState.connected ? onDisconnect : null,
+      onTap: connectionState != FloowerConnectionState.connected ? onDisconnect : null,
       title: Text(DeviceUtils.deviceName(device)),
       trailing: _deviceStateAction(context),
     );

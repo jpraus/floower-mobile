@@ -32,7 +32,7 @@ class FloowerConnector extends ChangeNotifier {
   }
 
   void sendColor(Color color) async {
-    assert(connectionState == FloowerConnectionState.connected);
+    //assert(connectionState == FloowerConnectionState.connected);
     print("Sending color");
 
     // Floower uses RGB (3 bytes)
@@ -137,13 +137,15 @@ class FloowerConnector extends ChangeNotifier {
   }
 
   void _onDeviceConnected(device) async {
-    // TODO: verify is device Floower
+    // TODO: verify device is Floower
     await _characteristicValuesSubscription?.cancel();
     _characteristicValuesSubscription = _ble.characteristicValueStream
         .listen(_onCharacteristicValue);
 
     _connectionState = FloowerConnectionState.verifying;
     notifyListeners();
+
+    await sendColor(Colors.yellowAccent);
 
     /*_ble.subscribeToCharacteristic(QualifiedCharacteristic(
       deviceId: _device.id,

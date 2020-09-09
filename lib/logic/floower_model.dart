@@ -9,9 +9,12 @@ class FloowerModel extends ChangeNotifier {
   final FloowerConnector _floowerConnector;
 
   Debouncer _colorDebouncer = Debouncer(duration: Duration(milliseconds: 300));
-  Color _color;
+  Color _color = Colors.black;
+  bool _connected = false;
 
-  FloowerModel(this._floowerConnector);
+  FloowerModel(this._floowerConnector) {
+    _floowerConnector.addListener(_onFloowerConnectorChange);
+  }
 
   Color get color {
     return _color;
@@ -27,8 +30,20 @@ class FloowerModel extends ChangeNotifier {
     });
   }
 
+  bool get connected {
+    return _connected;
+  }
+
   void setOpen() {
 
+  }
+
+  void _onFloowerConnectorChange() {
+    bool connected = _floowerConnector.connectionState == FloowerConnectionState.connected;
+    if (connected != _connected) {
+      _connected = connected;
+      notifyListeners();
+    }
   }
 }
 

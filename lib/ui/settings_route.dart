@@ -10,7 +10,7 @@ import 'package:system_setting/system_setting.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
-import 'package:Floower/ui/device.dart';
+import 'package:Floower/ui/connect_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
 class SettingsRoute extends StatelessWidget {
@@ -39,12 +39,17 @@ class _SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<FloowerModel>(
       builder: (_, floowerModel, __) => ListView(
-        children: _buildSettingsContent(floowerModel),
+        children: _buildSettingsContent(context, floowerModel),
       ),
     );
   }
 
-  List<Widget> _buildSettingsContent(FloowerModel floowerModel) {
+  void _onDisconnect(BuildContext context) {
+    print("Disconnect");
+    Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
+  }
+
+  List<Widget> _buildSettingsContent(BuildContext context, FloowerModel floowerModel) {
     bool deviceConnected = false;
     List<Widget> column = [];
 
@@ -52,57 +57,96 @@ class _SettingsScreen extends StatelessWidget {
     column.add(const SizedBox(height: 35));
     column.add(CupertinoList(
       children: [
-
-      ],
-    ));
-    /*
-    column.add(CupertinoList(
-      children: [
-        ConnectedDeviceListItem(
-          device: floowerConnector.device,
-          connectionState: floowerConnector.connectionState,
-          onDisconnect: _onDeviceDisconnect
-        )
-      ],
-    ));
-
-    // discover devices
-    column.add(const SizedBox(height: 35));
-    column.add(GestureDetector(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          children: <Widget>[
-            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: FloowerTextTheme.listLabel),
-            const SizedBox(width: 10),
-            scannerState.scanIsInProgress ? CupertinoActivityIndicator() : Icon(CupertinoIcons.refresh),
-          ],
+        CupertinoListItem(
+          title: Text("Floower Connected"),
+          trailing: GestureDetector(
+            child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
+            onTap: () => _onDisconnect(context),
+          ),
         ),
-      ),
-      onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
+        CupertinoListItem(
+          title: Text("Name"),
+          trailing: Row(
+            children: [
+              Text("Floower", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+              Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
+            ],
+          ),
+        ),
+        CupertinoListItem(
+          title: Text("Behavior"),
+          trailing: Row(
+            children: [
+              Text("Blooming Flower", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+              Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
+            ],
+          ),
+        ),
+      ],
     ));
 
-    // discovered devices
-    List<Widget> discoveredDevices = [];
-    for (DiscoveredDevice device in scannerState.discoveredDevices) {
-      if (floowerConnector.connectionState == FloowerConnectionState.disconnected || device.id != floowerConnector.device.id) {
-        discoveredDevices.add(new DiscoveredDeviceListItem(
-            device: device,
-            onTap: _onDiscoveredDeviceTap
-        ));
-        // skip connected devices
-      }
-    }
     column.add(CupertinoList(
-        children: discoveredDevices
+      margin: EdgeInsets.only(top: 35),
+      heading: Text("Color Scheme"),
+      children: [
+        CupertinoListItem(
+          title: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                margin: EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.all(Radius.circular(3.0))
+                ),
+              ),
+              Text("Red")
+            ],
+          ),
+        ),
+        CupertinoListItem(
+          title: Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                margin: EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                    color: Colors.yellow,
+                    borderRadius: BorderRadius.all(Radius.circular(3.0))
+                ),
+              ),
+              Text("Yellow")
+            ],
+          ),
+        ),
+      ],
     ));
-    if (!discoveredDevices.isEmpty) {
-      column.add(Padding(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: const Text("Tap the device to connected", style: FloowerTextTheme.listLabel),
-      ));
-    }
-*/
+
+    column.add(CupertinoList(
+      margin: EdgeInsets.only(top: 35),
+      heading: Text("About"),
+      children: [
+        CupertinoListItem(
+          title: Text("Serial Number"),
+          trailing: Text("0015", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+        ),
+        CupertinoListItem(
+          title: Text("Model"),
+          trailing: Text("Floower", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+        ),
+        CupertinoListItem(
+          title: Text("Firmware Version"),
+          trailing: Text("1.0", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+        ),
+        CupertinoListItem(
+          title: Text("Hardware Version"),
+          trailing: Text("1.0", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+        ),
+      ],
+    ));
+
     return column;
   }
 }

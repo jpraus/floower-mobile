@@ -261,7 +261,7 @@ class _ScanScreenState extends State<_ScanScreen> {
         ),
         onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
       ),
-      hint: discoveredDevices.isNotEmpty ? const Text("Tap the device to connected", style: FloowerTextTheme.listLabel) : null,
+      hint: discoveredDevices.isNotEmpty ? const Text("Tap the device to connect", style: FloowerTextTheme.listLabel) : null,
       children: discoveredDevices
     ));
 
