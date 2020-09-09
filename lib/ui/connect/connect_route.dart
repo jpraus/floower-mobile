@@ -80,6 +80,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
   @override
   Widget build(BuildContext context) {
     final MediaQueryData data = MediaQuery.of(context);
+    final double imageSize = max(data.size.width / 2, 300);
 
     FloowerConnector floowerConnector = Provider.of<FloowerConnector>(context);
     if (!connectingStarted) {
@@ -89,7 +90,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
 
     return Stack(
       children: [
-        _ConnectedAnimation(),
+        //_ConnectedAnimation(),
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -103,9 +104,21 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
                 ),
                 colorFilter: ColorFilter.mode(Colors.yellow, BlendMode.modulate),
               ),*/
-              Image(
-                  width: max(data.size.width / 2, 300),
-                  image: AssetImage("assets/images/floower-yellow.png")
+              Stack(
+                children: [
+                  Container(
+                    width: imageSize,
+                    height: imageSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.yellow
+                    ),
+                  ),
+                  Image(
+                    width: imageSize,
+                    image: AssetImage("assets/images/floower-yellow.png")
+                  ),
+                ],
               ),
               SizedBox(height: 18),
               Text("What color is your Floower now?"),
@@ -155,10 +168,10 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
 
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 400),
+      duration: Duration(milliseconds: 1000),
     );
 
-    _animation = Tween<double>(begin: 0, end: 20).animate(_controller);
+    _animation = Tween<double>(begin: 0, end: 100).animate(_controller);
     _controller.forward();
   }
 
