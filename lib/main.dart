@@ -9,7 +9,8 @@ import 'package:provider/provider.dart';
 
 import 'logic/floower_model.dart';
 import 'logic/floower_connector.dart';
-import 'ui/connect_route.dart';
+import 'ui/connect/discover_route.dart';
+import 'ui/connect/connect_route.dart';
 import 'ui/settings_route.dart';
 
 void main() {
@@ -39,8 +40,9 @@ void main() {
         ),
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
-          ConnectRoute.ROUTE_NAME: (context) => ConnectRoute(),
           HomeRoute.ROUTE_NAME: (context) => HomeRoute(),
+          DiscoverRoute.ROUTE_NAME: (context) => DiscoverRoute(),
+          ConnectRoute.ROUTE_NAME: (context) => ConnectRoute(),
           SettingsRoute.ROUTE_NAME: (context) => SettingsRoute()
         },
       ),
@@ -120,7 +122,7 @@ class Floower extends StatelessWidget {
                       child: Text("Connect"),
                       onPressed: () =>
                           Navigator.pushNamed(
-                              context, ConnectRoute.ROUTE_NAME),
+                              context, DiscoverRoute.ROUTE_NAME),
                     ),
                   ],
                 )

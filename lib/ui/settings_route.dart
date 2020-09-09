@@ -10,7 +10,7 @@ import 'package:system_setting/system_setting.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
-import 'package:Floower/ui/connect_route.dart';
+import 'file:///C:/Users/Georgus/Documents/Projects/tulip2/floower-mobile/lib/ui/connect/discover_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
 class SettingsRoute extends StatelessWidget {
@@ -46,7 +46,7 @@ class _SettingsScreen extends StatelessWidget {
 
   void _onDisconnect(BuildContext context) {
     print("Disconnect");
-    Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
+    Navigator.pushNamed(context, DiscoverRoute.ROUTE_NAME);
   }
 
   List<Widget> _buildSettingsContent(BuildContext context, FloowerModel floowerModel) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -8,14 +9,13 @@ import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
 import 'package:system_setting/system_setting.dart';
 
-import 'commons.dart';
+import '../commons.dart';
 import 'package:Floower/ble/ble_scanner.dart';
-import 'package:Floower/logic/floower_connector.dart';
-import 'package:Floower/ui/device.dart';
+import 'file:///C:/Users/Georgus/Documents/Projects/tulip2/floower-mobile/lib/ui/connect/device.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
-class ConnectRoute extends StatelessWidget {
-  static const ROUTE_NAME = '/connect';
+class DiscoverRoute extends StatelessWidget {
+  static const ROUTE_NAME = '/discover';
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +25,8 @@ class ConnectRoute extends StatelessWidget {
         middle: Text('Connect Your Floower'),
       ),
       child: SafeArea(
-        child: Consumer<FlutterReactiveBle>(
-          builder: (context, ble, __) => _DiscoverScreen(
-            ble: ble
-          )
+        child: _DiscoverScreen(
+          ble: Provider.of<FlutterReactiveBle>(context, listen: false)
         ),
       ),
     );
@@ -197,33 +195,32 @@ class _ScanScreenState extends State<_ScanScreen> {
 
   void _onDiscoveredDeviceTap(DiscoveredDevice device) async {
     _stopScanning();
-    Provider.of<FloowerConnector>(context, listen: false).connect(device);
-  }
-
-  void _onDeviceDisconnect() async {
-    Provider.of<FloowerConnector>(context, listen: false).disconnect();
+    Navigator.pushNamed(
+      context,
+      ConnectRoute.ROUTE_NAME,
+      arguments: ConnectRouteArguments(device),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<FloowerConnector>(
-      builder: (_, floowerConnector, __) => StreamBuilder<BleScannerState>(
-        stream: _bleScanner.state,
-        initialData: const BleScannerState(
-          discoveredDevices: [],
-          scanIsInProgress: false,
-        ),
-        builder: (_, scannerState) => ListView(
-          children: _buildScanContent(scannerState.data, floowerConnector),
-        ),
+    return StreamBuilder<BleScannerState>(
+      stream: _bleScanner.state,
+      initialData: const BleScannerState(
+        discoveredDevices: [],
+        scanIsInProgress: false,
+      ),
+      builder: (_, scannerState) => ListView(
+        children: _buildScanContent(scannerState.data),
       ),
     );
   }
 
-  List<Widget> _buildScanContent(BleScannerState scannerState, FloowerConnector floowerConnector) {
+  List<Widget> _buildScanContent(BleScannerState scannerState) {
     List<Widget> column = [];
 
     // connected devices
+    /*
     if (floowerConnector.connectionState != FloowerConnectionState.disconnected) {
       column.add(CupertinoList(
         margin: EdgeInsets.only(top: 35),
@@ -237,17 +234,15 @@ class _ScanScreenState extends State<_ScanScreen> {
         ],
       ));
     }
+    */
 
     // discovered devices
     List<Widget> discoveredDevices = [];
     for (DiscoveredDevice device in scannerState.discoveredDevices) {
-      if (floowerConnector.connectionState == FloowerConnectionState.disconnected || device.id != floowerConnector.device.id) {
-        discoveredDevices.add(new DiscoveredDeviceListItem(
-            device: device,
-            onTap: _onDiscoveredDeviceTap
-        ));
-        // skip connected devices
-      }
+      discoveredDevices.add(new DiscoveredDeviceListItem(
+          device: device,
+          onTap: _onDiscoveredDeviceTap
+      ));
     }
     column.add(CupertinoList(
       margin: EdgeInsets.only(top: 35),
