@@ -207,31 +207,27 @@ class _ScanScreenState extends State<_ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer<FloowerConnector>(
-      builder: (_, floowerModel, __) => StreamBuilder<BleScannerState>(
+      builder: (_, floowerConnector, __) => StreamBuilder<BleScannerState>(
         stream: _bleScanner.state,
         initialData: const BleScannerState(
           discoveredDevices: [],
           scanIsInProgress: false,
         ),
         builder: (_, scannerState) => ListView(
-          children: _buildScanContent(scannerState.data, floowerModel),
+          children: _buildScanContent(scannerState.data, floowerConnector),
         ),
       ),
     );
   }
 
   List<Widget> _buildScanContent(BleScannerState scannerState, FloowerConnector floowerConnector) {
-    bool deviceConnected = false;
     List<Widget> column = [];
 
     // connected devices
     if (floowerConnector.connectionState != FloowerConnectionState.disconnected) {
-      column.add(const SizedBox(height: 35));
-      column.add(Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
-      ));
       column.add(CupertinoList(
+        margin: EdgeInsets.only(top: 35),
+        heading: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
         children: [
           ConnectedDeviceListItem(
             device: floowerConnector.device,
@@ -240,24 +236,7 @@ class _ScanScreenState extends State<_ScanScreen> {
           )
         ],
       ));
-      deviceConnected = true;
     }
-
-    // discover devices
-    column.add(const SizedBox(height: 35));
-    column.add(GestureDetector(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          children: <Widget>[
-            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: FloowerTextTheme.listLabel),
-            const SizedBox(width: 10),
-            scannerState.scanIsInProgress ? CupertinoActivityIndicator() : Icon(CupertinoIcons.refresh),
-          ],
-        ),
-      ),
-      onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
-    ));
 
     // discovered devices
     List<Widget> discoveredDevices = [];
@@ -271,14 +250,20 @@ class _ScanScreenState extends State<_ScanScreen> {
       }
     }
     column.add(CupertinoList(
+      margin: EdgeInsets.only(top: 35),
+      heading: GestureDetector(
+        child: Row(
+          children: <Widget>[
+            Text(scannerState.scanIsInProgress ? "SCANNING FOR DEVICES" : "DISCOVERED DEVICES", style: FloowerTextTheme.listLabel),
+            const SizedBox(width: 10),
+            scannerState.scanIsInProgress ? CupertinoActivityIndicator() : Icon(CupertinoIcons.refresh),
+          ],
+        ),
+        onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
+      ),
+      hint: discoveredDevices.isNotEmpty ? const Text("Tap the device to connected", style: FloowerTextTheme.listLabel) : null,
       children: discoveredDevices
     ));
-    if (!discoveredDevices.isEmpty) {
-      column.add(Padding(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: const Text("Tap the device to connected", style: FloowerTextTheme.listLabel),
-      ));
-    }
 
     return column;
   }

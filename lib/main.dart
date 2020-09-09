@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'logic/floower_model.dart';
 import 'logic/floower_connector.dart';
 import 'ui/connect_route.dart';
+import 'ui/settings_route.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,8 @@ void main() {
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
           ConnectRoute.ROUTE_NAME: (context) => ConnectRoute(),
-          HomeRoute.ROUTE_NAME: (context) => HomeRoute()
+          HomeRoute.ROUTE_NAME: (context) => HomeRoute(),
+          SettingsRoute.ROUTE_NAME: (context) => SettingsRoute()
         },
       ),
     ),
@@ -62,12 +64,13 @@ class HomeRoute extends StatelessWidget {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.white,
       navigationBar: CupertinoNavigationBar(
-        middle: Image.asset('assets/images/floower.png'),
+        middle: Image.asset('assets/images/floower-trnsp.png', height: 20),
         trailing: GestureDetector(
           //child: Icon(CupertinoIcons.loop_thick),
           child: Icon(CupertinoIcons.gear),
           onTap: () {
             Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
+            //Navigator.pushNamed(context, SettingsRoute.ROUTE_NAME);
           },
         ),
       ),

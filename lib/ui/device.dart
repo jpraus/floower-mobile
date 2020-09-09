@@ -25,7 +25,7 @@ class ConnectedDeviceListItem extends StatelessWidget {
     return CupertinoListItem(
       onTap: () => connectionState != FloowerConnectionState.connected ? onDisconnect : null,
       title: Text(DeviceUtils.deviceName(device)),
-      trailling: _deviceStateAction(context),
+      trailing: _deviceStateAction(context),
     );
   }
 
@@ -70,7 +70,7 @@ class DiscoveredDeviceListItem extends StatelessWidget {
     return CupertinoListItem(
       onTap: () => onTap(device),
       title: Text(DeviceUtils.deviceName(device)),
-      trailling: device.rssi != null
+      trailing: device.rssi != null
           ? Text(device.rssi.toString() + ' dBm',
           style: _computeTextStyle(device.rssi))
           : null,
