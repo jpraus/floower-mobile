@@ -10,7 +10,7 @@ import 'package:system_setting/system_setting.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
-import 'file:///C:/Users/Georgus/Documents/Projects/tulip2/floower-mobile/lib/ui/connect/discover_route.dart';
+import 'package:Floower/ui/connect/discover_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
 class SettingsRoute extends StatelessWidget {
