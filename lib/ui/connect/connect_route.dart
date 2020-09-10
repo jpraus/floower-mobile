@@ -22,9 +22,14 @@ class ConnectRoute extends StatelessWidget {
         middle: Text('Connecting'),
       ),
       child: SafeArea(
-        child: _ConnectingScreen(
-          device: args.device
-        ),
+        child: Consumer<FloowerConnector>(
+          builder: (context, floowerConnector, child) {
+            return _ConnectingScreen(
+              floowerConnector: floowerConnector,
+              device: args.device
+            );
+          },
+        )
       ),
     );
   }
@@ -37,9 +42,11 @@ class ConnectRouteArguments {
 
 class _ConnectingScreen extends StatefulWidget {
 
+  final FloowerConnector floowerConnector;
   final DiscoveredDevice device;
 
   const _ConnectingScreen({
+    @required this.floowerConnector,
     @required this.device,
     Key key
   }) : super(key: key);
@@ -52,10 +59,9 @@ class _ConnectingScreen extends StatefulWidget {
 
 class _ConnectingScreenState extends State<_ConnectingScreen> {
 
-  bool connectingStarted = false;
-
   @override
   void initState() {
+    widget.floowerConnector.connect(widget.device);
     super.initState();
   }
 
@@ -80,58 +86,66 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
   @override
   Widget build(BuildContext context) {
     final MediaQueryData data = MediaQuery.of(context);
+    final double screenHeigth = data.size.height;
     final double imageSize = max(data.size.width / 2, 300);
 
-    FloowerConnector floowerConnector = Provider.of<FloowerConnector>(context);
-    if (!connectingStarted) {
-      floowerConnector.connect(widget.device);
-      connectingStarted = true;
+    List<Widget> column = [];
+
+    column.add(Padding(
+      padding: EdgeInsets.only(bottom: 18),
+      child: Text(widget.floowerConnector.connectionState == FloowerConnectionState.connecting ? "Connecting" : "Connected", style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle),
+    ));
+
+    column.add(Stack(
+      children: [
+        Container(
+          width: imageSize / 2,
+          height: imageSize / 2,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black12
+          ),
+        ),
+        Image(
+            width: imageSize,
+            image: AssetImage("assets/images/floower-blossom-bw.png")
+        ),
+      ],
+    ));
+
+    if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting) {
+      column.add(Padding(
+        padding: EdgeInsets.only(top: 22),
+        child: CupertinoButton.filled(
+          child: Text("Cancel"),
+          onPressed: () => _onCancel(context)
+        )
+      ));
+    } else {
+      column.add(Padding(
+        padding: EdgeInsets.only(bottom: 18, top: 18),
+        child: Text("What color is your Floower now?"),
+      ));
+      column.add(CupertinoButton.filled(
+          child: Text("Yellow"),
+          onPressed: () => _onCancel(context)
+      ));
+      column.add(CupertinoButton(
+          child: Text("Some other"),
+          onPressed: () => _onCancel(context)
+      ));
     }
 
     return Stack(
       children: [
-        //_ConnectedAnimation(),
-        Center(
+        _ConnectedAnimation(),
+        Container(
+          alignment: Alignment.topCenter,
+          padding: EdgeInsets.only(top: screenHeigth / 8),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Connected", style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle),
-              SizedBox(height: 18),
-              /*ColorFiltered(
-                child: Image(
-                  width: max(data.size.width / 2, 300),
-                  image: AssetImage("assets/images/floower-yellow.png")
-                ),
-                colorFilter: ColorFilter.mode(Colors.yellow, BlendMode.modulate),
-              ),*/
-              Stack(
-                children: [
-                  Container(
-                    width: imageSize,
-                    height: imageSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.yellow
-                    ),
-                  ),
-                  Image(
-                    width: imageSize,
-                    image: AssetImage("assets/images/floower-yellow.png")
-                  ),
-                ],
-              ),
-              SizedBox(height: 18),
-              Text("What color is your Floower now?"),
-              SizedBox(height: 18),
-              CupertinoButton.filled(
-                  child: Text("Yellow"),
-                  onPressed: () => _onCancel(context)
-              ),
-              CupertinoButton(
-                  child: Text("Some other"),
-                  onPressed: () => _onCancel(context)
-              ),
-            ],
+            children: column,
           ),
         ),
         /*Center(
@@ -171,7 +185,14 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
       duration: Duration(milliseconds: 1000),
     );
 
-    _animation = Tween<double>(begin: 0, end: 100).animate(_controller);
+    _animation = Tween<double>(begin: 50, end: 400).animate(_controller);
+    _animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reset();
+        _controller.forward();
+      }
+    });
+    //_controller.value;
     _controller.forward();
   }
 
@@ -186,10 +207,6 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _animation.value,
-          child: child,
-        );
         return CustomPaint(
           size: Size.infinite,
           painter: _DrawCenteredCircle(
@@ -197,14 +214,7 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
             color: Colors.lightGreenAccent
           )
         );
-      },
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _DrawCenteredCircle(
-          radius: 10,
-          color: Colors.yellow
-        )
-      ),
+      }
     );
   }
 }
@@ -227,7 +237,7 @@ class _DrawCenteredCircle extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
+  bool shouldRepaint(_DrawCenteredCircle oldDelegate) {
+    return oldDelegate.radius != radius;
   }
 }
