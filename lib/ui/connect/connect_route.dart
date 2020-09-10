@@ -96,21 +96,9 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
       child: Text(widget.floowerConnector.connectionState == FloowerConnectionState.connecting ? "Connecting" : "Connected", style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle),
     ));
 
-    column.add(Stack(
-      children: [
-        Container(
-          width: imageSize / 2,
-          height: imageSize / 2,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black12
-          ),
-        ),
-        Image(
-            width: imageSize,
-            image: AssetImage("assets/images/floower-blossom-bw.png")
-        ),
-      ],
+    column.add(Image(
+      width: imageSize,
+      image: AssetImage("assets/images/floower-blossom-bw.png")
     ));
 
     if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting) {
@@ -138,7 +126,13 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
 
     return Stack(
       children: [
-        _ConnectedAnimation(),
+        _ConnectedAnimation(
+          minRadius: 50,
+          maxRadius: screenHeigth / 2,
+          maxOpacity: 0.5,
+          repeat: true,
+          color: Colors.blue,
+        ),
         Container(
           alignment: Alignment.topCenter,
           padding: EdgeInsets.only(top: screenHeigth / 8),
@@ -167,13 +161,29 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
 }
 
 class _ConnectedAnimation extends StatefulWidget {
+
+  final double maxRadius;
+  final double minRadius;
+  final double maxOpacity;
+  final Color color;
+  final bool repeat;
+
+  _ConnectedAnimation({
+    @required this.maxRadius,
+    @required this.minRadius,
+    this.maxOpacity = 1.0,
+    this.color = Colors.lightGreenAccent,
+    this.repeat = false
+  });
+
   @override
   _ConnectedAnimationState createState() => _ConnectedAnimationState();
 }
 
 class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTickerProviderStateMixin {
 
-  Animation<double> _animation;
+  Animation<double> _radiusAnimation;
+  Animation<double> _opacityAnimation;
   AnimationController _controller;
 
   @override
@@ -185,9 +195,10 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
       duration: Duration(milliseconds: 1000),
     );
 
-    _animation = Tween<double>(begin: 50, end: 400).animate(_controller);
-    _animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+    _opacityAnimation = Tween<double>(begin: widget.maxOpacity, end: 0).animate(_controller);
+    _radiusAnimation = Tween<double>(begin: widget.minRadius, end: widget.maxRadius).animate(_controller);
+    _radiusAnimation.addStatusListener((status) {
+      if (status == AnimationStatus.completed && widget.repeat) {
         _controller.reset();
         _controller.forward();
       }
@@ -210,8 +221,8 @@ class _ConnectedAnimationState extends State<_ConnectedAnimation> with SingleTic
         return CustomPaint(
           size: Size.infinite,
           painter: _DrawCenteredCircle(
-            radius: _animation.value,
-            color: Colors.lightGreenAccent
+            radius: _radiusAnimation.value,
+            color: widget.color.withOpacity(_opacityAnimation.value)
           )
         );
       }
@@ -238,6 +249,6 @@ class _DrawCenteredCircle extends CustomPainter {
 
   @override
   bool shouldRepaint(_DrawCenteredCircle oldDelegate) {
-    return oldDelegate.radius != radius;
+    return oldDelegate.radius != radius || oldDelegate.color != color;
   }
 }
