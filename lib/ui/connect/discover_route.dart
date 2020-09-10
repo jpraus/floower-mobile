@@ -11,7 +11,7 @@ import 'package:system_setting/system_setting.dart';
 
 import '../commons.dart';
 import 'package:Floower/ble/ble_scanner.dart';
-import 'file:///C:/Users/Georgus/Documents/Projects/tulip2/floower-mobile/lib/ui/connect/device.dart';
+import 'package:Floower/ui/connect/device.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
 class DiscoverRoute extends StatelessWidget {
