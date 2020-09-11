@@ -38,7 +38,7 @@ class ConnectedDeviceListItem extends StatelessWidget {
         );
 
       case FloowerConnectionState.connecting:
-      case FloowerConnectionState.verifying:
+      case FloowerConnectionState.pairing:
         return Row(
           children: [
             Text(connectionState == FloowerConnectionState.connecting ? "Connecting" : "Verifying"),

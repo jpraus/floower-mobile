@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Floower/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -44,9 +45,9 @@ class _SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _onDisconnect(BuildContext context) {
-    print("Disconnect");
-    Navigator.pushNamed(context, DiscoverRoute.ROUTE_NAME);
+  void _onDisconnect(BuildContext context) async {
+    await Provider.of<FloowerConnector>(context, listen: false).disconnect();
+    Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
 
   List<Widget> _buildSettingsContent(BuildContext context, FloowerModel floowerModel) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Floower/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -60,21 +61,52 @@ class _ConnectingScreen extends StatefulWidget {
 
 class _ConnectingScreenState extends State<_ConnectingScreen> {
 
-  _ConnectionState _state = _ConnectionState.connectingInit;
+  _ConnectionState _state = _ConnectionState.connecting;
+  bool _connectingStarted = false;
+  bool _disconnectingStarted = false;
 
   @override
   void initState() {
     widget.floowerConnector.connect(widget.device);
-    _state = _ConnectionState.connectingStarted;
+    widget.floowerConnector.addListener(_onFloowerConnectorChange);
     super.initState();
   }
 
   @override
   void dispose() {
+    widget.floowerConnector.removeListener(_onFloowerConnectorChange);
     super.dispose();
   }
 
+  void _onFloowerConnectorChange() {
+    bool canFail = _connectingStarted && !_disconnectingStarted;
+
+    if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting) {
+      _connectingStarted = true;
+    }
+    else if (widget.floowerConnector.connectionState == FloowerConnectionState.pairing) {
+      _onDevicePairing();
+    }
+    else if (canFail && (widget.floowerConnector.connectionState == FloowerConnectionState.disconnecting || widget.floowerConnector.connectionState == FloowerConnectionState.disconnected)) {
+      setState(() => _state = _ConnectionState.disconnected);
+    }
+  }
+
+  void _onDevicePairing() async {
+    setState(() => _state = _ConnectionState.pairing);
+
+    Duration transitionDuration = const Duration(milliseconds: 500);
+    Color color = Colors.yellowAccent;
+
+    await widget.floowerConnector.sendState(openLevel: 20, color: color, duration: transitionDuration);
+    await new Future.delayed(transitionDuration);
+    await widget.floowerConnector.sendState(openLevel: 0, color: color, duration: transitionDuration);
+
+    setState(() => _state = _ConnectionState.paired);
+  }
+
   Future<bool> _disconnect() async {
+    _disconnectingStarted = true;
     await widget.floowerConnector.disconnect();
     return true;
   }
@@ -84,39 +116,40 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
     Navigator.pop(context); // back to scan screen
   }
 
+  void _onReconnect(BuildContext context) {
+    widget.floowerConnector.connect(widget.device);
+    setState(() => _state = _ConnectionState.connecting);
+  }
+
+  void _onPair(BuildContext context) async {
+    await widget.floowerConnector.sendState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500));
+    widget.floowerConnector.pair();
+    Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget screen;
 
-    if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting || _state == _ConnectionState.connectingInit) {
-      screen = _connectingScreen();
-    }
-    else if (widget.floowerConnector.connectionState == FloowerConnectionState.verifying) {
-      _onDeviceConnected(context);
-      screen = _connectedScreen();
-    }
-    else {
-      print(widget.floowerConnector.connectionState);
-      screen = Container();
+    switch (_state) {
+      case _ConnectionState.connecting:
+      case _ConnectionState.pairing:
+        screen = _connectingScreen();
+        break;
+
+      case _ConnectionState.paired:
+        screen = _connectedScreen();
+        break;
+
+      case _ConnectionState.disconnected:
+        screen = _failedScreen();
+        break;
     }
 
     return WillPopScope(
       onWillPop: _disconnect,
       child: screen,
     );
-  }
-
-  void _onDeviceConnected(BuildContext context) async {
-
-    await widget.floowerConnector.sendState(20, Colors.yellowAccent);
-    await new Future.delayed(const Duration(milliseconds: 500));
-    await widget.floowerConnector.sendState(0, Colors.yellowAccent);
-/*
-    setState(() {
-      verificationReady = true;
-    });
- */
-    //widget.floowerConnector.sendColor(Colors.yellow);
   }
 
   Widget _connectingScreen() {
@@ -167,7 +200,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
           ),
           CupertinoButton.filled(
               child: Text("Yes"),
-              onPressed: () => _onCancel(context)
+              onPressed: () => _onPair(context)
           ),
           CupertinoButton(
               child: Text("Not, its not"),
@@ -206,6 +239,57 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
               color: Colors.yellow,
               centerOffset: centerOffset,
               key: UniqueKey()
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _failedScreen() {
+    final MediaQueryData data = MediaQuery.of(context);
+
+    return _ConnectingScreenLayout(
+      title: "Failed",
+      image: Image(
+          fit: BoxFit.fitHeight,
+          image: AssetImage("assets/images/floower-blossom-bw.png")
+      ),
+      traling: CupertinoButton.filled(
+          child: Text("Try again"),
+          onPressed: () => _onReconnect(context)
+      ),
+      backgroundBuilder: (centerOffset, imageSize) {
+        return Stack(
+          children: [
+            _CircleAnimation(
+                duration: Duration(milliseconds: 300),
+                startRadius: 50,
+                endRadius: data.size.height,
+                endOpacity: 0,
+                color: Colors.red,
+                centerOffset: centerOffset,
+                key: UniqueKey()
+            ),
+            _CircleAnimation(
+                duration: Duration(milliseconds: 1000),
+                startRadius: 200,
+                endRadius: data.size.height,
+                startOpacity: 0.4,
+                endOpacity: 0,
+                color: Colors.red,
+                centerOffset: centerOffset,
+                key: UniqueKey()
+            ),
+            _CircleAnimation(
+                duration: Duration(milliseconds: 1000),
+                startRadius: 50,
+                endRadius: data.size.height,
+                startOpacity: 0.5,
+                endOpacity: 0,
+                color: Colors.red,
+                centerOffset: centerOffset,
+                key: UniqueKey()
             )
           ],
         );
@@ -268,10 +352,10 @@ class _ConnectingScreenLayout extends StatelessWidget {
 
 /// Connection state
 enum _ConnectionState {
-  connectingInit,
-  connectingStarted,
-  verificationStarted,
-  verificationReady,
+  connecting,
+  pairing,
+  paired,
+  disconnected
 }
 
 class _CircleAnimation extends StatefulWidget {

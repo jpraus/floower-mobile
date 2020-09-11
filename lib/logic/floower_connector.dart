@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ class FloowerConnector extends ChangeNotifier {
   final Uuid FLOOWER_SERVICE_UUID = Uuid.parse("28e17913-66c1-475f-a76e-86b5242f4cec");
   final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string
   final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B)
+  final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode)
   final Uuid FLOOWER_COLOR_RGB_UUID = Uuid.parse("151a039e-68ee-4009-853d-cd9d271e4a6e"); // 3 bytes (R + G + B)
   final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
 
@@ -32,27 +34,51 @@ class FloowerConnector extends ChangeNotifier {
     return _device;
   }
 
-  void sendState(int openLevel, Color color) async {
+  Future<bool> sendState({
+      int openLevel,
+      Color color,
+      Duration duration = const Duration(seconds: 1), // max 25s
+    }) async {
+
     //assert(connectionState == FloowerConnectionState.connected);
     print("Sending state (open level + color)");
 
+    // compute mode
+    int mode = 0;
+    if (color != null) {
+      mode += 1;
+    }
+    if (openLevel != null) {
+      mode += 2;
+    }
+
     // 4 bytes (open level + R + G + B)
     List<int> value = List();
-    value.add(openLevel);
-    value.add(color.red);
-    value.add(color.green);
-    value.add(color.blue);
+    value.add(openLevel ?? 0);
+    value.add(color?.red ?? 0);
+    value.add(color?.green ?? 0);
+    value.add(color?.blue ?? 0);
+    value.add((duration.inMilliseconds / 100).round());
+    value.add(mode);
 
-    await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+    bool result = await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
       deviceId: device.id,
       serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_STATE_UUID,
+      characteristicId: FLOOWER_STATE_CHANGE_UUID,
     ), value: value).then((value) {
-      print("Sent state");
+      return true;
     }).catchError((e) {
-      // TODO: error handler
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+        // TODO: response
+        print("Unknown characteristics");
+        return;
+      }
       throw e;
     });
+
+    print(result);
+
+    return true;
   }
 
   void sendColor(Color color) async {
@@ -135,27 +161,33 @@ class FloowerConnector extends ChangeNotifier {
     }
   }
 
+  void pair() {
+    if (_connectionState == FloowerConnectionState.pairing) {
+      _connectionState = FloowerConnectionState.connected;
+      notifyListeners();
+    }
+  }
+
   void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
     switch (stateUpdate.connectionState) {
       case DeviceConnectionState.connected:
-        _onDeviceConnected(_device);
+        _connectionState = FloowerConnectionState.pairing;
         break;
 
       case DeviceConnectionState.connecting:
         _connectionState = FloowerConnectionState.connecting;
-        notifyListeners();
         break;
 
       case DeviceConnectionState.disconnecting:
         _connectionState = FloowerConnectionState.disconnecting;
-        notifyListeners();
         break;
 
       case DeviceConnectionState.disconnected:
         _connectionState = FloowerConnectionState.disconnected;
-        notifyListeners();
         break;
     }
+
+    notifyListeners();
   }
 
   void _onDeviceConnected(device) async {
@@ -164,7 +196,7 @@ class FloowerConnector extends ChangeNotifier {
     _characteristicValuesSubscription = _ble.characteristicValueStream
         .listen(_onCharacteristicValue);
 
-    _connectionState = FloowerConnectionState.verifying;
+    _connectionState = FloowerConnectionState.pairing;
     notifyListeners();
 
     //await sendColor(Colors.yellowAccent);
@@ -194,7 +226,7 @@ enum FloowerConnectionState {
   connecting,
 
   /// Checking if device has Floower API
-  verifying,
+  pairing,
 
   /// Connection is established.
   connected,
