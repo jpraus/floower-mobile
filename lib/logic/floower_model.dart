@@ -8,7 +8,7 @@ class FloowerModel extends ChangeNotifier {
 
   final FloowerConnector _floowerConnector;
 
-  Debouncer _colorDebouncer = Debouncer(duration: Duration(milliseconds: 300));
+  Debouncer _colorDebouncer = Debouncer(duration: Duration(milliseconds: 50));
   Color _color = Colors.black;
   bool _connected = false;
 
@@ -26,7 +26,7 @@ class FloowerModel extends ChangeNotifier {
 
     // TODO: throttle
     _colorDebouncer.debounce(() {
-      _floowerConnector.sendColor(color);
+      _floowerConnector.sendState(color: color, duration: Duration(milliseconds: 500));
     });
   }
 

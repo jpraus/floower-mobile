@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:flutter_reactive_ble/src/model/write_characteristic_info.dart';
 
 class FloowerConnector extends ChangeNotifier {
 
@@ -34,7 +35,7 @@ class FloowerConnector extends ChangeNotifier {
     return _device;
   }
 
-  Future<bool> sendState({
+  Future<SendResult> sendState({
       int openLevel,
       Color color,
       Duration duration = const Duration(seconds: 1), // max 25s
@@ -52,7 +53,7 @@ class FloowerConnector extends ChangeNotifier {
       mode += 2;
     }
 
-    // 4 bytes (open level + R + G + B)
+    // 6 bytes data packet
     List<int> value = List();
     value.add(openLevel ?? 0);
     value.add(color?.red ?? 0);
@@ -61,24 +62,20 @@ class FloowerConnector extends ChangeNotifier {
     value.add((duration.inMilliseconds / 100).round());
     value.add(mode);
 
-    bool result = await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+    SendResult result = await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
       deviceId: device.id,
       serviceId: FLOOWER_SERVICE_UUID,
       characteristicId: FLOOWER_STATE_CHANGE_UUID,
     ), value: value).then((value) {
-      return true;
+      return SendResult();
     }).catchError((e) {
-      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
-        // TODO: response
-        print("Unknown characteristics");
-        return;
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
+        return SendResult(success: false, errorMessage: "Not a compatibile device");
       }
       throw e;
     });
 
-    print(result);
-
-    return true;
+    return result;
   }
 
   void sendColor(Color color) async {
@@ -250,4 +247,14 @@ class ValueException implements Exception {
   String toString() {
     return _message;
   }
+}
+
+class SendResult {
+  final bool success;
+  final String errorMessage;
+
+  SendResult({
+    this.success = true,
+    this.errorMessage
+  });
 }

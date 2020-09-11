@@ -97,9 +97,9 @@ class Floower extends StatelessWidget {
                   : AssetImage("assets/images/floower-bw.png"),
               ),
             ),
-            /*Container(
+            Container(
               alignment: Alignment.topCenter,
-              child: CircleColorPicker(
+              child: model.connected ? CircleColorPicker(
                 //initialColor: Colors.blue,
                 size: const Size(250, 250), // TODO
                 textStyle: const TextStyle(fontSize: 0),
@@ -107,8 +107,8 @@ class Floower extends StatelessWidget {
                 //thumbSize: 36,
                 onChanged: (color) => Provider.of<FloowerModel>(context, listen: false).setColor(color),
                 //onChanged: _onColorPickerChanged
-              ),
-            ),*/
+              ) : null,
+            ),
             Center(
               child: !model.connected ? Container(
                 padding: EdgeInsets.all(18),

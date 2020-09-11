@@ -64,6 +64,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
   _ConnectionState _state = _ConnectionState.connecting;
   bool _connectingStarted = false;
   bool _disconnectingStarted = false;
+  String _failedMessage;
 
   @override
   void initState() {
@@ -88,7 +89,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
       _onDevicePairing();
     }
     else if (canFail && (widget.floowerConnector.connectionState == FloowerConnectionState.disconnecting || widget.floowerConnector.connectionState == FloowerConnectionState.disconnected)) {
-      setState(() => _state = _ConnectionState.disconnected);
+      setState(() => _state = _ConnectionState.failed);
     }
   }
 
@@ -98,11 +99,21 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
     Duration transitionDuration = const Duration(milliseconds: 500);
     Color color = Colors.yellowAccent;
 
-    await widget.floowerConnector.sendState(openLevel: 20, color: color, duration: transitionDuration);
-    await new Future.delayed(transitionDuration);
-    await widget.floowerConnector.sendState(openLevel: 0, color: color, duration: transitionDuration);
+    // try to send pairing command to change color and open a bit
+    SendResult result = await widget.floowerConnector.sendState(openLevel: 20, color: color, duration: transitionDuration);
+    if (!result.success) {
+      setState(() {
+        _failedMessage = result.errorMessage;
+        _state = _ConnectionState.failed;
+      });
+    }
+    else {
+      // if success close again
+      await new Future.delayed(transitionDuration);
+      await widget.floowerConnector.sendState(openLevel: 0, color: color, duration: transitionDuration);
 
-    setState(() => _state = _ConnectionState.paired);
+      setState(() => _state = _ConnectionState.paired);
+    }
   }
 
   Future<bool> _disconnect() async {
@@ -141,7 +152,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
         screen = _connectedScreen();
         break;
 
-      case _ConnectionState.disconnected:
+      case _ConnectionState.failed:
         screen = _failedScreen();
         break;
     }
@@ -161,7 +172,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
           fit: BoxFit.fitHeight,
           image: AssetImage("assets/images/floower-blossom-bw.png")
       ),
-      traling: CupertinoButton.filled(
+      trailing: CupertinoButton.filled(
         child: Text("Cancel"),
         onPressed: () => _onCancel(context)
       ),
@@ -190,7 +201,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
         fit: BoxFit.fitHeight,
         image: AssetImage("assets/images/floower-blossom.png")
       ),
-      traling: Column(
+      trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -255,9 +266,23 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
           fit: BoxFit.fitHeight,
           image: AssetImage("assets/images/floower-blossom-bw.png")
       ),
-      traling: CupertinoButton.filled(
-          child: Text("Try again"),
-          onPressed: () => _onReconnect(context)
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: 18),
+            child: Text(_failedMessage),
+          ),
+          CupertinoButton.filled(
+              child: Text("Try again"),
+              onPressed: () => _onReconnect(context)
+          ),
+          CupertinoButton(
+              child: Text("Choose another"),
+              onPressed: () => _onCancel(context)
+          )
+        ],
       ),
       backgroundBuilder: (centerOffset, imageSize) {
         return Stack(
@@ -303,13 +328,13 @@ class _ConnectingScreenLayout extends StatelessWidget {
   final String title;
   final Widget Function(Offset centerOffset, double imageSize) backgroundBuilder;
   final Widget image;
-  final Widget traling;
+  final Widget trailing;
 
   _ConnectingScreenLayout({
     @required this.title,
     @required this.backgroundBuilder,
     @required this.image,
-    @required this.traling
+    @required this.trailing
   });
 
   @override
@@ -341,7 +366,7 @@ class _ConnectingScreenLayout extends StatelessWidget {
             ),
             Padding(
               padding: EdgeInsets.only(top: 28),
-              child: traling
+              child: trailing
             )
           ],
         ),
@@ -355,7 +380,7 @@ enum _ConnectionState {
   connecting,
   pairing,
   paired,
-  disconnected
+  failed
 }
 
 class _CircleAnimation extends StatefulWidget {
