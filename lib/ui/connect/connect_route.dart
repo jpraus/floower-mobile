@@ -60,11 +60,12 @@ class _ConnectingScreen extends StatefulWidget {
 
 class _ConnectingScreenState extends State<_ConnectingScreen> {
 
-  bool connectingStarted = false;
+  _ConnectionState _state = _ConnectionState.connectingInit;
 
   @override
   void initState() {
     widget.floowerConnector.connect(widget.device);
+    _state = _ConnectionState.connectingStarted;
     super.initState();
   }
 
@@ -87,18 +88,35 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
   Widget build(BuildContext context) {
     Widget screen;
 
-    if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting || !connectingStarted) {
-      connectingStarted = true;
+    if (widget.floowerConnector.connectionState == FloowerConnectionState.connecting || _state == _ConnectionState.connectingInit) {
       screen = _connectingScreen();
     }
-    else {
+    else if (widget.floowerConnector.connectionState == FloowerConnectionState.verifying) {
+      _onDeviceConnected(context);
       screen = _connectedScreen();
+    }
+    else {
+      print(widget.floowerConnector.connectionState);
+      screen = Container();
     }
 
     return WillPopScope(
       onWillPop: _disconnect,
       child: screen,
     );
+  }
+
+  void _onDeviceConnected(BuildContext context) async {
+
+    await widget.floowerConnector.sendState(20, Colors.yellowAccent);
+    await new Future.delayed(const Duration(milliseconds: 500));
+    await widget.floowerConnector.sendState(0, Colors.yellowAccent);
+/*
+    setState(() {
+      verificationReady = true;
+    });
+ */
+    //widget.floowerConnector.sendColor(Colors.yellow);
   }
 
   Widget _connectingScreen() {
@@ -124,13 +142,15 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
           repeat: true,
           color: Colors.blue,
           centerOffset: centerOffset,
-          key: ObjectKey(FloowerConnectionState.connecting)
+          key: UniqueKey()
         );
       },
     );
   }
 
   Widget _connectedScreen() {
+    final MediaQueryData data = MediaQuery.of(context);
+
     return _ConnectingScreenLayout(
       title: "Connected",
       image: Image(
@@ -143,27 +163,51 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: 18),
-            child: Text("What color is your Floower now?"),
+            child: Text("Is your Floower yellow now?"),
           ),
           CupertinoButton.filled(
-              child: Text("Yellow"),
+              child: Text("Yes"),
               onPressed: () => _onCancel(context)
           ),
           CupertinoButton(
-              child: Text("Some other"),
+              child: Text("Not, its not"),
               onPressed: () => _onCancel(context)
           )
         ],
       ),
       backgroundBuilder: (centerOffset, imageSize) {
-        return _CircleAnimation(
-          duration: Duration(milliseconds: 300),
-          startRadius: 50,
-          endRadius: imageSize / 2,
-          endOpacity: 1,
-          color: Colors.yellow,
-          centerOffset: centerOffset,
-          key: ObjectKey(FloowerConnectionState.connected)
+        return Stack(
+          children: [
+            _CircleAnimation(
+                duration: Duration(milliseconds: 300),
+                startRadius: 50,
+                endRadius: imageSize / 2,
+                endOpacity: 1,
+                color: Colors.yellow,
+                centerOffset: centerOffset,
+                key: UniqueKey()
+            ),
+            _CircleAnimation(
+                duration: Duration(milliseconds: 1000),
+                startRadius: 200,
+                endRadius: data.size.height,
+                startOpacity: 0.4,
+                endOpacity: 0,
+                color: Colors.yellow,
+                centerOffset: centerOffset,
+                key: UniqueKey()
+            ),
+            _CircleAnimation(
+              duration: Duration(milliseconds: 1000),
+              startRadius: 50,
+              endRadius: data.size.height,
+              startOpacity: 0.5,
+              endOpacity: 0,
+              color: Colors.yellow,
+              centerOffset: centerOffset,
+              key: UniqueKey()
+            )
+          ],
         );
       },
     );
@@ -222,6 +266,13 @@ class _ConnectingScreenLayout extends StatelessWidget {
   }
 }
 
+/// Connection state
+enum _ConnectionState {
+  connectingInit,
+  connectingStarted,
+  verificationStarted,
+  verificationReady,
+}
 
 class _CircleAnimation extends StatefulWidget {
 

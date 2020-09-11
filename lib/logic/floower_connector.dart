@@ -7,9 +7,10 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class FloowerConnector extends ChangeNotifier {
 
   final Uuid FLOOWER_SERVICE_UUID = Uuid.parse("28e17913-66c1-475f-a76e-86b5242f4cec");
-  final Uuid FLOOWER_COLOR_RGB_UUID = Uuid.parse("151a039e-68ee-4009-853d-cd9d271e4a6e"); // 3 bytes (RGB)
   final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string
-  final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color
+  final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B)
+  final Uuid FLOOWER_COLOR_RGB_UUID = Uuid.parse("151a039e-68ee-4009-853d-cd9d271e4a6e"); // 3 bytes (R + G + B)
+  final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
 
   final Uuid UNKNOWN_UUID = Uuid.parse("67789d80-d68b-4afb-af13-28799bad561a");
 
@@ -31,6 +32,29 @@ class FloowerConnector extends ChangeNotifier {
     return _device;
   }
 
+  void sendState(int openLevel, Color color) async {
+    //assert(connectionState == FloowerConnectionState.connected);
+    print("Sending state (open level + color)");
+
+    // 4 bytes (open level + R + G + B)
+    List<int> value = List();
+    value.add(openLevel);
+    value.add(color.red);
+    value.add(color.green);
+    value.add(color.blue);
+
+    await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+      deviceId: device.id,
+      serviceId: FLOOWER_SERVICE_UUID,
+      characteristicId: FLOOWER_STATE_UUID,
+    ), value: value).then((value) {
+      print("Sent state");
+    }).catchError((e) {
+      // TODO: error handler
+      throw e;
+    });
+  }
+
   void sendColor(Color color) async {
     //assert(connectionState == FloowerConnectionState.connected);
     print("Sending color");
@@ -45,8 +69,6 @@ class FloowerConnector extends ChangeNotifier {
       deviceId: device.id,
       serviceId: FLOOWER_SERVICE_UUID,
       characteristicId: FLOOWER_COLOR_RGB_UUID,
-      //serviceId: Uuid.parse("6E400001-B5A3-F393-E0A9-E50E24DCCA9E"),
-      //characteristicId: Uuid.parse("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
     ), value: value).then((value) {
       print("Sent color");
     }).catchError((e) {
@@ -145,7 +167,7 @@ class FloowerConnector extends ChangeNotifier {
     _connectionState = FloowerConnectionState.verifying;
     notifyListeners();
 
-    await sendColor(Colors.yellowAccent);
+    //await sendColor(Colors.yellowAccent);
 
     /*_ble.subscribeToCharacteristic(QualifiedCharacteristic(
       deviceId: _device.id,
@@ -153,10 +175,10 @@ class FloowerConnector extends ChangeNotifier {
       characteristicId: FLOOWER_COLOR_READ_UUID,
     ));*/
 
-    await readColor();
+    //await readColor();
 
-    _connectionState = FloowerConnectionState.connected;
-    notifyListeners();
+    //_connectionState = FloowerConnectionState.connected;
+    //notifyListeners();
 
     print("Connected to device");
   }
