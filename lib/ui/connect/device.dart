@@ -69,7 +69,10 @@ class DiscoveredDeviceListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoListItem(
       onTap: () => onTap(device),
-      title: Text(DeviceUtils.deviceName(device)),
+      title: Text(DeviceUtils.deviceName(device),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
       trailing: device.rssi != null
           ? Text(device.rssi.toString() + ' dBm',
           style: _computeTextStyle(device.rssi))

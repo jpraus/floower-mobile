@@ -188,7 +188,7 @@ class _ConnectingScreenLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final MediaQueryData data = MediaQuery.of(context);
     final double imageSize = max(data.size.height / 2.6, 200); // magic constant
-    final double topOffset = (data.size.height - 500) / 2;
+    final double topOffset = max((data.size.height - (imageSize + 200)) / 2, 70); // magic constant
     final Offset centerOffset = Offset(data.size.width / 2, topOffset + imageSize / 2);
 
     return Stack(

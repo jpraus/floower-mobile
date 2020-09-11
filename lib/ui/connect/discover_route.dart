@@ -219,23 +219,6 @@ class _ScanScreenState extends State<_ScanScreen> {
   List<Widget> _buildScanContent(BleScannerState scannerState) {
     List<Widget> column = [];
 
-    // connected devices
-    /*
-    if (floowerConnector.connectionState != FloowerConnectionState.disconnected) {
-      column.add(CupertinoList(
-        margin: EdgeInsets.only(top: 35),
-        heading: const Text("CONNECTED DEVICES", style: FloowerTextTheme.listLabel),
-        children: [
-          ConnectedDeviceListItem(
-            device: floowerConnector.device,
-            connectionState: floowerConnector.connectionState,
-            onDisconnect: _onDeviceDisconnect
-          )
-        ],
-      ));
-    }
-    */
-
     // discovered devices
     List<Widget> discoveredDevices = [];
     for (DiscoveredDevice device in scannerState.discoveredDevices) {
@@ -244,8 +227,9 @@ class _ScanScreenState extends State<_ScanScreen> {
           onTap: _onDiscoveredDeviceTap
       ));
     }
+
     column.add(CupertinoList(
-      margin: EdgeInsets.only(top: 35),
+      margin: EdgeInsets.only(top: 18),
       heading: GestureDetector(
         child: Row(
           children: <Widget>[
@@ -256,7 +240,7 @@ class _ScanScreenState extends State<_ScanScreen> {
         ),
         onTap: scannerState.scanIsInProgress ? _stopScanning : _startScanning,
       ),
-      hint: discoveredDevices.isNotEmpty ? const Text("Tap the device to connect", style: FloowerTextTheme.listLabel) : null,
+      //hint: discoveredDevices.isNotEmpty ? const Text("Tap the device to connect", style: FloowerTextTheme.listLabel) : null,
       children: discoveredDevices
     ));
 

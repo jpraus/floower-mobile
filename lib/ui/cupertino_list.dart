@@ -24,50 +24,28 @@ class CupertinoList extends StatelessWidget {
 
     if (heading != null) {
       column.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
         child: heading,
       ));
     }
 
-    List<Widget> listChildren = [];
-    int index = 0;
-    for (Widget child in children) {
-      if (index < children.length - 1) {
-        listChildren.add(Container(
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray)
-            )
+    if (children.isNotEmpty) {
+      column.add(Padding(
+        padding: EdgeInsets.only(left: 18, right: 18),
+        child: ClipRRect(
+          clipBehavior: Clip.antiAlias,
+          borderRadius: BorderRadius.circular(10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
           ),
-          child: child,
-        ));
-      }
-      else {
-        listChildren.add(child);
-      }
-      index++;
-    }
-
-    if (listChildren.isNotEmpty) {
-      column.add(Container(
-        padding: EdgeInsets.only(left: 18),
-        decoration: const BoxDecoration(
-          color: CupertinoColors.white,
-          border: Border(
-            top: BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray),
-            bottom: BorderSide(width: 1, color: CupertinoColors.lightBackgroundGray)
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: listChildren,
         ),
       ));
     }
 
     if (hint != null) {
       column.add(Padding(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        padding: EdgeInsets.symmetric(vertical: 18, horizontal: 18),
         child: hint,
       ));
     }
@@ -131,7 +109,7 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
         ),
         duration: Duration(milliseconds: 50),
         child: Padding(
-          padding: EdgeInsets.only(right: 18, top: 18, bottom: 18),
+          padding: EdgeInsets.all(22),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
