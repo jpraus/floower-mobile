@@ -7,53 +7,6 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
-class ConnectedDeviceListItem extends StatelessWidget {
-
-  final DiscoveredDevice device;
-  final FloowerConnectionState connectionState;
-  final void Function() onDisconnect;
-
-  const ConnectedDeviceListItem({
-    Key key,
-    @required this.device,
-    @required this.connectionState,
-    this.onDisconnect
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoListItem(
-      onTap: connectionState != FloowerConnectionState.connected ? onDisconnect : null,
-      title: Text(DeviceUtils.deviceName(device)),
-      trailing: _deviceStateAction(context),
-    );
-  }
-
-  Widget _deviceStateAction(BuildContext context) {
-    switch (connectionState) {
-      case FloowerConnectionState.connected:
-        return GestureDetector(
-          child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
-          onTap: onDisconnect,
-        );
-
-      case FloowerConnectionState.connecting:
-      case FloowerConnectionState.pairing:
-        return Row(
-          children: [
-            Text(connectionState == FloowerConnectionState.connecting ? "Connecting" : "Verifying"),
-            SizedBox(width: 10),
-            CupertinoActivityIndicator()
-          ],
-        );
-
-      case FloowerConnectionState.disconnecting:
-        return Text("Disconnecting");
-    }
-    return Container();
-  }
-}
-
 class DiscoveredDeviceListItem extends StatelessWidget {
 
   final DiscoveredDevice device;
@@ -73,10 +26,11 @@ class DiscoveredDeviceListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
       ),
-      trailing: device.rssi != null
-          ? Text(device.rssi.toString() + ' dBm',
-          style: _computeTextStyle(device.rssi))
-          : null,
+      trailing: GestureDetector(
+        child: Text("CONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
+        onTap: () => onTap(device),
+      ),
+      //trailing: Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
     );
   }
 

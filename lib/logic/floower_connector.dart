@@ -82,6 +82,7 @@ class FloowerConnector extends ChangeNotifier {
     ), value: value).then((value) {
       return SendResult();
     }).catchError((e) {
+      // TODO: handle errors
       if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
         return SendResult(success: false, errorMessage: "Not a compatibile device");
       }
@@ -112,10 +113,44 @@ class FloowerConnector extends ChangeNotifier {
       print("Got color " + value.toString());
       return Color.fromRGBO(value[0], value[1], value[2], 1);
     }).catchError((e) {
+      // TODO: handle errors
       if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
         // TODO: response
         print("Unknown characteristics");
-        return;
+      }
+      throw e;
+    });
+  }
+
+  Future<List<Color>> readColorsScheme() async {
+    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
+
+    return await _ble.readCharacteristic(QualifiedCharacteristic(
+        deviceId: device.id,
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_COLORS_SCHEME_UUID
+    )).then((value) {
+      assert(value.length % 3 == 0);
+      for (int byte in value) {
+        if (byte < 0 || byte > 255) {
+          throw ValueException("RGB color values our of range");
+        }
+      }
+
+      print("Got colors scheme " + value.toString());
+
+      int count = (value.length / 3).floor();
+      List<Color> colors = [];
+      for (int c = 0; c < count; c++) {
+        int byte = c * 3;
+        colors.add(Color.fromRGBO(value[byte], value[byte + 1], value[byte + 2], 1));
+      }
+      return colors;
+    }).catchError((e) {
+      // TODO: handle errors
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+        // TODO: response
+        print("Unknown characteristics");
       }
       throw e;
     });
@@ -124,6 +159,7 @@ class FloowerConnector extends ChangeNotifier {
   Stream<int> subscribeBatteryLevel() {
     assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
 
+    // TODO: handle errors
     return _ble.subscribeToCharacteristic(QualifiedCharacteristic(
       deviceId: _device.id,
       serviceId: BATTERY_UUID,

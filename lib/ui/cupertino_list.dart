@@ -63,12 +63,14 @@ class CupertinoList extends StatelessWidget {
 
 class CupertinoListItem extends StatefulWidget {
 
+  final Widget leading;
   final Widget title;
   final Widget trailing;
   final void Function() onTap;
 
   const CupertinoListItem({
     Key key,
+    this.leading,
     @required this.title,
     this.trailing,
     this.onTap,
@@ -113,6 +115,7 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              widget.leading != null ? widget.leading : SizedBox(width: 0),
               Expanded(
                 child: widget.title
               ),

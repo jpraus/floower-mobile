@@ -4,7 +4,6 @@ import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
 import 'package:Floower/ui/settings_route.dart';
 
@@ -41,7 +40,8 @@ class _Floower extends StatelessWidget {
     Navigator.pushNamed(context, DiscoverRoute.ROUTE_NAME);
   }
 
-  void _onColorPickerChanged(Color color) {
+  void _onColorPickerChanged(BuildContext context, FloowerColor color) {
+    Provider.of<FloowerModel>(context, listen: false).setColor(color);
   }
 
   @override
@@ -50,10 +50,30 @@ class _Floower extends StatelessWidget {
     final MediaQueryData data = MediaQuery.of(context);
     FloowerModel floowerModel = Provider.of<FloowerModel>(context);
 
+    double lightSize = data.size.height / 2.7;
     return Consumer<FloowerModel>(
       builder: (context, model, child) {
         return Stack(
           children: <Widget>[
+            Visibility(
+              visible: model.connected && !floowerModel.color.isBlack(),
+              child: Positioned(
+                top: 8,
+                right: 0,
+                left: 0,
+                child: Container(
+                  alignment: Alignment.topCenter,
+                  width: lightSize,
+                  height: lightSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [floowerModel.color.displayColor, floowerModel.color.displayColor, Colors.white],
+                    )
+                  ),
+                ),
+              ),
+            ),
             Center(
               child: Image(
                 image: model.connected
@@ -61,7 +81,7 @@ class _Floower extends StatelessWidget {
                   : AssetImage("assets/images/floower-bw.png"),
               ),
             ),
-            Container(
+            /*Container(
               alignment: Alignment.topCenter,
               child: model.connected ? CircleColorPicker(
                 //initialColor: Colors.blue,
@@ -69,10 +89,10 @@ class _Floower extends StatelessWidget {
                 textStyle: const TextStyle(fontSize: 0),
                 strokeWidth: 16,
                 //thumbSize: 36,
-                onChanged: (color) => Provider.of<FloowerModel>(context, listen: false).setColor(color),
+                onChanged: (color) => _onColorPickerChanged(context, color),
                 //onChanged: _onColorPickerChanged
               ) : null,
-            ),
+            ),*/
             Center(
               child: !model.connected ? Container(
                 padding: EdgeInsets.all(18),
@@ -91,6 +111,13 @@ class _Floower extends StatelessWidget {
               ) : null,
             ),
             Positioned(
+              left: 14,
+              top: 14,
+              child: _ColorPicker(
+                onSelect: (color) => _onColorPickerChanged(context, color),
+              ),
+            ),
+            Positioned(
               right: 20,
               bottom: 20,
               child: _BatteryLevelIndicator(),
@@ -101,6 +128,50 @@ class _Floower extends StatelessWidget {
     );
   }
 }
+
+class _ColorPicker extends StatelessWidget {
+
+  void Function(FloowerColor color) onSelect;
+
+  _ColorPicker({this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context);
+
+    return FutureBuilder<List<FloowerColor>>(
+      future: floowerModel.getColorsScheme(),
+      builder: _buildColorPicker,
+      initialData: [],
+    );
+  }
+
+  Widget _buildColorPicker(BuildContext context, AsyncSnapshot<List<FloowerColor>> snapshot) {
+    if (!snapshot.hasData || snapshot.data.isEmpty) {
+      return SizedBox(width: 0, height: 0);
+    }
+
+    List<Widget> items = snapshot.data.map((color) => GestureDetector(
+      child: Container(
+        width: 60,
+        height: 60,
+        margin: EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.displayColor,
+          border: Border.all(color: Colors.black.withAlpha(20))
+        ),
+      ),
+      onTap: () => onSelect(color),
+    )).toList();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: items,
+    );
+  }
+}
+
 
 class _BatteryLevelIndicator extends StatefulWidget {
   _BatteryLevelIndicator({Key key}) : super(key: key);
@@ -164,4 +235,3 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
     );
   }
 }
-
