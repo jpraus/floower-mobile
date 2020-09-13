@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
 import 'package:system_setting/system_setting.dart';
 
-import '../commons.dart';
+import 'package:Floower/ui/commons.dart';
 import 'package:Floower/ble/ble_scanner.dart';
 import 'package:Floower/ui/connect/device.dart';
 import 'package:Floower/ui/cupertino_list.dart';

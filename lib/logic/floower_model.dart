@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'floower_connector.dart';
+import 'package:Floower/logic/floower_connector.dart';
 
 class FloowerModel extends ChangeNotifier {
 

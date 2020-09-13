@@ -1,17 +1,12 @@
 import 'dart:async';
 
-import 'package:Floower/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
-import 'package:system_setting/system_setting.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
-import 'package:Floower/ui/connect/discover_route.dart';
+import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 
 class SettingsRoute extends StatelessWidget {

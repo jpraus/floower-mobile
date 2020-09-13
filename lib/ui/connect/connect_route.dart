@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:Floower/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:meta/meta.dart';
 import 'package:provider/provider.dart';
 
+import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/logic/floower_connector.dart';
 
 class ConnectRoute extends StatelessWidget {
@@ -214,7 +214,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
               onPressed: () => _onPair(context)
           ),
           CupertinoButton(
-              child: Text("Not, its not"),
+              child: Text("Not, it's not"),
               onPressed: () => _onCancel(context)
           )
         ],
