@@ -9,8 +9,10 @@ class FloowerModel extends ChangeNotifier {
 
   final FloowerConnector _floowerConnector;
 
-  Debouncer _colorDebouncer = Debouncer(duration: Duration(milliseconds: 50));
-  FloowerColor _color = FloowerColor.fromDisplayColor(Colors.black);
+  Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 50));
+
+  int _petalsOpenLevel = 0; // TODO read from state
+  FloowerColor _color = FloowerColor.black;
   List<FloowerColor> _colorsScheme;
 
   bool _connected = false;
@@ -30,8 +32,7 @@ class FloowerModel extends ChangeNotifier {
 
     print("Change color to $color");
 
-    // TODO: throttle
-    _colorDebouncer.debounce(() {
+    _stateDebouncer.debounce(() {
       _floowerConnector.sendState(color: color.hwColor, duration: Duration(milliseconds: 100));
     });
   }
@@ -40,12 +41,25 @@ class FloowerModel extends ChangeNotifier {
     return _connected;
   }
 
-  void setOpen() {
+  void openPetals() {
+    _stateDebouncer.debounce(() {
+      _floowerConnector.sendState(openLevel: 100, duration: Duration(seconds: 5));
+    });
+    _petalsOpenLevel = 100;
+  }
 
+  void closePetals() {
+    _stateDebouncer.debounce(() {
+      _floowerConnector.sendState(openLevel: 0, duration: Duration(seconds: 5));
+    });
+    _petalsOpenLevel = 0;
+  }
+
+  bool isOpen() {
+    return _petalsOpenLevel == 100;
   }
 
   Future<List<FloowerColor>> getColorsScheme() async {
-    // TODO: cache
     if (_connected) {
       if (_colorsScheme == null) {
         _colorsScheme = (await _floowerConnector.readColorsScheme())
@@ -54,6 +68,7 @@ class FloowerModel extends ChangeNotifier {
       }
       return _colorsScheme;
     }
+    return List.empty();
   }
 
   void _onFloowerConnectorChange() {
@@ -72,6 +87,7 @@ class FloowerModel extends ChangeNotifier {
 
   void _onFloowerConnected() {
     // battery level
+    // TODO: this is getting read twice .. unsusbcribe somehow
     _floowerConnector.subscribeBatteryLevel().listen((batteryLevel) {
       if (_batteryLevel != batteryLevel) {
         print("Updating battery level: $batteryLevel%");
@@ -82,6 +98,8 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void _onFloowerDisconnected() {
+    _color = FloowerColor.black;
+    _petalsOpenLevel = 0;
     _colorsScheme = null;
   }
 }
@@ -111,6 +129,8 @@ class FloowerColor {
   bool isBlack() {
     return _hwColor.getBrightness() == 0;
   }
+
+  static FloowerColor black = FloowerColor.fromHwRGB(0, 0, 0);
 
   static FloowerColor fromDisplayColor(Color displayColor) {
     return FloowerColor._(TinyColor(displayColor).darken(50));

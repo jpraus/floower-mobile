@@ -92,8 +92,7 @@ class FloowerConnector extends ChangeNotifier {
     return result;
   }
 
-  // TODO
-  Future<Color> readState() async {
+  Future<FloowerState> readState() async {
     assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
 
     return await _ble.readCharacteristic(QualifiedCharacteristic(
@@ -101,17 +100,24 @@ class FloowerConnector extends ChangeNotifier {
       serviceId: FLOOWER_SERVICE_UUID,
       characteristicId: FLOOWER_STATE_UUID
     )).then((value) {
-      assert(value.length == 3);
-      assert(value[0] >= 0 && value[0] <= 255);
-      assert(value[1] >= 0 && value[1] <= 255);
-      assert(value[2] >= 0 && value[2] <= 255);
+      assert(value.length == 4);
+      assert(value[0] >= 0 && value[0] <= 100); // open level
+      assert(value[1] >= 0 && value[1] <= 255); // R
+      assert(value[2] >= 0 && value[2] <= 255); // G
+      assert(value[3] >= 0 && value[3] <= 255); // B
 
-      if (value[0] < 0 || value[0] > 255 || value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255) {
+      if (value[0] >= 0 || value[0] <= 100) {
+        throw ValueException("Petals open level value our of range");
+      }
+      if (value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255 || value[3] < 0 || value[3] > 255) {
         throw ValueException("RGB color values our of range");
       }
 
-      print("Got color " + value.toString());
-      return Color.fromRGBO(value[0], value[1], value[2], 1);
+      print("Got state $value");
+      return FloowerState(
+        petalsOpenLevel: value[0],
+        color: Color.fromRGBO(value[0], value[1], value[2], 1),
+      );
     }).catchError((e) {
       // TODO: handle errors
       if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
@@ -283,6 +289,13 @@ enum FloowerConnectionState {
 
   /// Device is disconnected.
   disconnected
+}
+
+class FloowerState {
+  final int petalsOpenLevel;
+  final Color color;
+
+  FloowerState({this.petalsOpenLevel, this.color});
 }
 
 class ValueException implements Exception {
