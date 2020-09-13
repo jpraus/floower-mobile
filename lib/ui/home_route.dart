@@ -13,20 +13,18 @@ class HomeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context);
+
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.white,
       navigationBar: CupertinoNavigationBar(
         middle: Image.asset('assets/images/floower-trnsp.png', height: 18),
-        trailing: Consumer<FloowerModel>(
-          builder: (context, model, child) {
-            return model.connected
-              ? GestureDetector(
-                child: Icon(CupertinoIcons.gear),
-                onTap: () => Navigator.pushNamed(context, SettingsRoute.ROUTE_NAME),
-              )
-              : Container(width: 0, height: 0);
-          }
-        ),
+        trailing: floowerModel.connected
+          ? GestureDetector(
+            child: Icon(CupertinoIcons.gear),
+            onTap: () => Navigator.pushNamed(context, SettingsRoute.ROUTE_NAME),
+          )
+          : Container(width: 0, height: 0)
       ),
       child: SafeArea(
         child: _Floower(),
@@ -50,6 +48,7 @@ class _Floower extends StatelessWidget {
   Widget build(BuildContext context) {
     assert(debugCheckHasMediaQuery(context));
     final MediaQueryData data = MediaQuery.of(context);
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context);
 
     return Consumer<FloowerModel>(
       builder: (context, model, child) {
@@ -91,9 +90,78 @@ class _Floower extends StatelessWidget {
                 )
               ) : null,
             ),
+            Positioned(
+              right: 20,
+              bottom: 20,
+              child: _BatteryLevelIndicator(),
+            )
           ],
         );
       },
     );
   }
 }
+
+class _BatteryLevelIndicator extends StatefulWidget {
+  _BatteryLevelIndicator({Key key}) : super(key: key);
+
+  @override
+  _BatteryLevelIndicatorState createState() => _BatteryLevelIndicatorState();
+}
+
+class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with SingleTickerProviderStateMixin {
+  AnimationController _animationController;
+
+  @override
+  void initState() {
+    _animationController = new AnimationController(vsync: this, duration: Duration(seconds: 1));
+    _animationController.repeat();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context);
+    int level = floowerModel.batteryLevel;
+    Widget icon;
+
+    if (level < 0 || !floowerModel.connected) {
+      return Container();
+    }
+
+    if (level == 100) {
+      icon = Icon(CupertinoIcons.battery_charging);
+    }
+    else if (level > 75) {
+      icon = Icon(CupertinoIcons.battery_full);
+    }
+    else if (level > 50) {
+      icon = Icon(CupertinoIcons.battery_75_percent);
+    }
+    else if (level > 25) {
+      icon = Icon(CupertinoIcons.battery_25_percent);
+    }
+    else {
+      icon = FadeTransition(
+        child: Icon(CupertinoIcons.battery_empty, color: Colors.red),
+        opacity: _animationController,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        SizedBox(width: 5),
+        Text("$level%")
+      ],
+    );
+  }
+}
+

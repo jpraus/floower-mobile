@@ -8,14 +8,27 @@ import 'package:flutter_reactive_ble/src/model/write_characteristic_info.dart';
 
 class FloowerConnector extends ChangeNotifier {
 
-  final Uuid FLOOWER_SERVICE_UUID = Uuid.parse("28e17913-66c1-475f-a76e-86b5242f4cec");
-  final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string
-  final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B)
-  final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode)
-  final Uuid FLOOWER_COLOR_RGB_UUID = Uuid.parse("151a039e-68ee-4009-853d-cd9d271e4a6e"); // 3 bytes (R + G + B)
-  final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
+  // https://docs.springcard.com/books/SpringCore/Host_interfaces/Physical_and_Transport/Bluetooth/Standard_Services
+  // Device Information profile
+  final Uuid DEVICE_INFORMATION_UUID = Uuid.parse("180A");
+  final Uuid DEVICE_INFORMATION_MODEL_NUMBER_STRING_UUID = Uuid.parse("2A24"); // string
+  final Uuid DEVICE_INFORMATION_SERIAL_NUMBER_UUID = Uuid.parse("2A25"); // string
+  final Uuid DEVICE_INFORMATION_FIRMWARE_REVISION_UUID = Uuid.parse("2A26"); // string M.mm.bbbbb
+  final Uuid DEVICE_INFORMATION_HARDWARE_REVISION_UUID = Uuid.parse("2A27"); // string
+  final Uuid DEVICE_INFORMATION_SOFTWARE_REVISION_UUID = Uuid.parse("2A28"); // string M.mm.bbbbb
+  final Uuid DEVICE_INFORMATION_MANUFACTURER_NAME_UUID = Uuid.parse("2A29"); // string
 
-  final Uuid UNKNOWN_UUID = Uuid.parse("67789d80-d68b-4afb-af13-28799bad561a");
+  // Battery level profile
+  final Uuid BATTERY_UUID = Uuid.parse("180F");
+  final Uuid BATTERY_LEVEL_UUID = Uuid.parse("2A19"); // uint8
+  final Uuid BATTERY_POWER_STATE_UUID = Uuid.parse("2A1A"); // uint8 of states
+
+  // Floower custom profile
+  final Uuid FLOOWER_SERVICE_UUID = Uuid.parse("28e17913-66c1-475f-a76e-86b5242f4cec");
+  final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string, RO
+  final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B), RO
+  final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode), WO
+  final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
 
   final FlutterReactiveBle _ble;
 
@@ -41,7 +54,7 @@ class FloowerConnector extends ChangeNotifier {
       Duration duration = const Duration(seconds: 1), // max 25s
     }) async {
 
-    //assert(connectionState == FloowerConnectionState.connected);
+    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
     print("Sending state (open level + color)");
 
     // compute mode
@@ -78,36 +91,14 @@ class FloowerConnector extends ChangeNotifier {
     return result;
   }
 
-  void sendColor(Color color) async {
-    //assert(connectionState == FloowerConnectionState.connected);
-    print("Sending color");
-
-    // Floower uses RGB (3 bytes)
-    List<int> value = List();
-    value.add(color.red);
-    value.add(color.green);
-    value.add(color.blue);
-
-    await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
-      deviceId: device.id,
-      serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_COLOR_RGB_UUID,
-    ), value: value).then((value) {
-      print("Sent color");
-    }).catchError((e) {
-      // TODO: error handler
-      throw e;
-    });
-  }
-
-  Future<Color> readColor() async {
-    //assert(connectionState == FloowerConnectionState.connected);
-    print("Getting color");
+  // TODO
+  Future<Color> readState() async {
+    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
 
     return await _ble.readCharacteristic(QualifiedCharacteristic(
       deviceId: device.id,
       serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: UNKNOWN_UUID
+      characteristicId: FLOOWER_STATE_UUID
     )).then((value) {
       assert(value.length == 3);
       assert(value[0] >= 0 && value[0] <= 255);
@@ -127,6 +118,29 @@ class FloowerConnector extends ChangeNotifier {
         return;
       }
       throw e;
+    });
+  }
+
+  Stream<int> subscribeBatteryLevel() {
+    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
+
+    return _ble.subscribeToCharacteristic(QualifiedCharacteristic(
+      deviceId: _device.id,
+      serviceId: BATTERY_UUID,
+      characteristicId: BATTERY_LEVEL_UUID,
+    )).map((bytes) {
+      print("Got battery level notification $bytes");
+      if (bytes.length == 1) {
+        int level = bytes[0];
+        if (level < 0) {
+          return 0;
+        }
+        if (level > 100) {
+          return 100;
+        }
+        return level;
+      }
+      return -1; // unknown
     });
   }
 

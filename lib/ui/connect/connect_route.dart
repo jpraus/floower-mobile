@@ -272,7 +272,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: 18),
-            child: Text(_failedMessage),
+            child: Text(_failedMessage ?? "Cannot connect to selected Floower"),
           ),
           CupertinoButton.filled(
               child: Text("Try again"),

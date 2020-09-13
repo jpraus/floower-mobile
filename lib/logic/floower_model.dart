@@ -12,13 +12,14 @@ class FloowerModel extends ChangeNotifier {
   Color _color = Colors.black;
   bool _connected = false;
 
+  int _batteryLevel = -1; // unknown
+
   FloowerModel(this._floowerConnector) {
     _floowerConnector.addListener(_onFloowerConnectorChange);
   }
 
-  Color get color {
-    return _color;
-  }
+  Color get color => _color;
+  int get batteryLevel => _batteryLevel;
 
   void setColor(Color color) {
     _color = color;
@@ -42,8 +43,29 @@ class FloowerModel extends ChangeNotifier {
     bool connected = _floowerConnector.connectionState == FloowerConnectionState.connected;
     if (connected != _connected) {
       _connected = connected;
+      if (connected) {
+        _onFloowerConnected();
+      }
+      else {
+        _onFloowerDisconnected();
+      }
       notifyListeners();
     }
+  }
+
+  void _onFloowerConnected() {
+    // battery level
+    _floowerConnector.subscribeBatteryLevel().listen((batteryLevel) {
+      if (_batteryLevel != batteryLevel) {
+        print("Updating battery level: $batteryLevel%");
+        _batteryLevel = batteryLevel;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _onFloowerDisconnected() {
+
   }
 }
 
