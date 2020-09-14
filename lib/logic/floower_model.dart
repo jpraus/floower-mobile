@@ -8,16 +8,15 @@ import 'package:tinycolor/tinycolor.dart';
 class FloowerModel extends ChangeNotifier {
 
   final FloowerConnector _floowerConnector;
+  bool _connected = false;
 
-  Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 50));
+  Debouncer _sendDebouncer = Debouncer(duration: Duration(milliseconds: 50));
 
   int _petalsOpenLevel = 0; // TODO read from state
   FloowerColor _color = FloowerColor.black;
-  List<FloowerColor> _colorsScheme;
+  List<FloowerColor> _colorsScheme; // max 10 colos
 
-  bool _connected = false;
-
-  int _batteryLevel = -1; // unknown
+  int _batteryLevel = -1; // -1 = unknown
 
   FloowerModel(this._floowerConnector) {
     _floowerConnector.addListener(_onFloowerConnectorChange);
@@ -32,7 +31,7 @@ class FloowerModel extends ChangeNotifier {
 
     print("Change color to $color");
 
-    _stateDebouncer.debounce(() {
+    _sendDebouncer.debounce(() {
       _floowerConnector.sendState(color: color.hwColor, duration: Duration(milliseconds: 100));
     });
   }
@@ -42,14 +41,14 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void openPetals() {
-    _stateDebouncer.debounce(() {
+    _sendDebouncer.debounce(() {
       _floowerConnector.sendState(openLevel: 100, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 100;
   }
 
   void closePetals() {
-    _stateDebouncer.debounce(() {
+    _sendDebouncer.debounce(() {
       _floowerConnector.sendState(openLevel: 0, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 0;
@@ -128,6 +127,10 @@ class FloowerColor {
 
   bool isBlack() {
     return _hwColor.getBrightness() == 0;
+  }
+
+  bool isLight() {
+    return _hwColor.isLight();
   }
 
   static FloowerColor black = FloowerColor.fromHwRGB(0, 0, 0);

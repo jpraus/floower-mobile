@@ -1,8 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/scheduler.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
@@ -82,18 +82,6 @@ class _Floower extends StatelessWidget {
                   : AssetImage("assets/images/floower-bw.png"),
               ),
             ),
-            /*Container(
-              alignment: Alignment.topCenter,
-              child: model.connected ? CircleColorPicker(
-                //initialColor: Colors.blue,
-                size: const Size(250, 250), // TODO
-                textStyle: const TextStyle(fontSize: 0),
-                strokeWidth: 16,
-                //thumbSize: 36,
-                onChanged: (color) => _onColorPickerChanged(context, color),
-                //onChanged: _onColorPickerChanged
-              ) : null,
-            ),*/
             Center(
               child: !floowerModel.connected ? Container(
                 padding: EdgeInsets.all(18),
@@ -115,27 +103,23 @@ class _Floower extends StatelessWidget {
               left: 14,
               top: 14,
               child: _ColorPicker(
+                maxHeight: constraints.maxHeight - 28, // padding
                 onSelect: (color) => _onColorPickerChanged(context, color),
               ),
             ),
             Positioned(
               top: refHeight / 2.1,
               left: constraints.maxWidth / 2,
-              child: floowerModel.connected ? Align(
-                alignment: Alignment.topCenter,
-                child: GestureDetector(
-                  child: Transform.rotate(
-                    //angle: -0.8,
-                    angle: 0,
-                    child: Container(
-                      alignment: Alignment.topCenter,
-                      color: Colors.black.withOpacity(0.1),
-                      width: refHeight / 4.5,
-                      height: refHeight / 3.5,
-                    ),
+              child: floowerModel.connected ? GestureDetector(
+                child: Transform.rotate(
+                  //angle: -0.8,
+                  angle: 0,
+                  child: Container(
+                    width: refHeight / 4.5,
+                    height: refHeight / 3.5,
                   ),
-                  onTap: () => floowerModel.isOpen() ? floowerModel.closePetals() : floowerModel.openPetals(),
                 ),
+                onTap: () => floowerModel.isOpen() ? floowerModel.closePetals() : floowerModel.openPetals(),
               ) : SizedBox.shrink(),
             ),
             Positioned(
@@ -152,9 +136,10 @@ class _Floower extends StatelessWidget {
 
 class _ColorPicker extends StatelessWidget {
 
-  void Function(FloowerColor color) onSelect;
+  final double maxHeight;
+  final void Function(FloowerColor color) onSelect;
 
-  _ColorPicker({this.onSelect});
+  _ColorPicker({this.maxHeight, this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -172,15 +157,16 @@ class _ColorPicker extends StatelessWidget {
       return SizedBox(width: 0, height: 0);
     }
 
+    double circleSize = min(maxHeight / (snapshot.data.length + 1), 70);
     List<Widget> items = snapshot.data.map((color) => GestureDetector(
       child: Container(
-        width: 60,
-        height: 60,
+        width: circleSize - 8,
+        height: circleSize - 8,
         margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color.displayColor,
-          border: Border.all(color: Colors.black.withAlpha(20))
+          border: Border.all(color: Colors.black.withOpacity(color.isLight() ? 0.4 : 0.2))
         ),
       ),
       onTap: () => onSelect(color),
@@ -188,12 +174,12 @@ class _ColorPicker extends StatelessWidget {
 
     items.add(GestureDetector(
       child: Container(
-        width: 60,
-        height: 60,
+        width: circleSize - 8,
+        height: circleSize - 8,
         margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black.withAlpha(20))
+            border: Border.all(color: Colors.black.withOpacity(0.4))
         ),
         child: Icon(Icons.power_settings_new, color: Colors.black),
       ),
