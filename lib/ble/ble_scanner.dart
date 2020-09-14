@@ -22,13 +22,15 @@ class BleScanner {
     _devices.clear();
     _subscription?.cancel();
     _subscription = _ble.scanForDevices(withServices: serviceIds).listen((device) {
-      final knownDeviceIndex = _devices.indexWhere((d) => d.id == device.id);
-      if (knownDeviceIndex >= 0) {
-        _devices[knownDeviceIndex] = device;
-      } else {
-        _devices.add(device);
+      if (device.name != null && device.name != "") {
+        final knownDeviceIndex = _devices.indexWhere((d) => d.id == device.id);
+        if (knownDeviceIndex >= 0) {
+          _devices[knownDeviceIndex] = device;
+        } else {
+          _devices.add(device);
+        }
+        _pushState();
       }
-      _pushState();
     });
     _timeoutTimer?.cancel();
     if (timeout.inMilliseconds > 0) {
