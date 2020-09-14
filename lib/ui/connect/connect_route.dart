@@ -19,7 +19,6 @@ class ConnectRoute extends StatelessWidget {
     final ConnectRouteArguments args = ModalRoute.of(context).settings.arguments;
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.extraLightBackgroundGray,
       navigationBar: CupertinoNavigationBar(
         middle: Text('Connecting'),
       ),

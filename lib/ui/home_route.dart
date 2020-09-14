@@ -16,7 +16,6 @@ class HomeRoute extends StatelessWidget {
     FloowerModel floowerModel = Provider.of<FloowerModel>(context);
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.white,
       navigationBar: CupertinoNavigationBar(
         middle: Image.asset('assets/images/floower-trnsp.png', height: 18),
         trailing: floowerModel.connected
@@ -69,7 +68,7 @@ class _Floower extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                      colors: [floowerModel.color.displayColor, floowerModel.color.displayColor, Colors.white],
+                      colors: [floowerModel.color.displayColor, floowerModel.color.displayColor, CupertinoTheme.of(context).scaffoldBackgroundColor],
                     )
                   ),
                 ),
@@ -85,7 +84,7 @@ class _Floower extends StatelessWidget {
             Center(
               child: !floowerModel.connected ? Container(
                 padding: EdgeInsets.all(18),
-                color: CupertinoColors.white,
+                color: CupertinoTheme.of(context).scaffoldBackgroundColor,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -157,6 +156,8 @@ class _ColorPicker extends StatelessWidget {
       return SizedBox(width: 0, height: 0);
     }
 
+    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
+
     double circleSize = min(maxHeight / (snapshot.data.length + 1), 70);
     List<Widget> items = snapshot.data.map((color) => GestureDetector(
       child: Container(
@@ -166,7 +167,7 @@ class _ColorPicker extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color.displayColor,
-          border: Border.all(color: Colors.black.withOpacity(color.isLight() ? 0.4 : 0.2))
+          border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.4 : 0.2))
         ),
       ),
       onTap: () => onSelect(color),
@@ -179,9 +180,9 @@ class _ColorPicker extends StatelessWidget {
         margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-            border: Border.all(color: Colors.black.withOpacity(0.4))
+            border: Border.all(color: borderColor.withOpacity(0.4))
         ),
-        child: Icon(Icons.power_settings_new, color: Colors.black),
+        child: Icon(Icons.power_settings_new, color: borderColor),
       ),
       onTap: () => onSelect(FloowerColor.black)
     ));
@@ -245,13 +246,17 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        icon,
-        SizedBox(width: 5),
-        Text("$level%")
-      ],
+    return Container(
+      color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: 5),
+          icon,
+          SizedBox(width: 5),
+          Text("$level%")
+        ],
+      ),
     );
   }
 }

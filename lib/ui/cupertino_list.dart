@@ -84,22 +84,26 @@ class CupertinoListItem extends StatefulWidget {
 
 class _CupertinoListItemState extends State<CupertinoListItem> {
 
-  Color _color = Colors.white;
+  Color _color;
 
   void _onTapDown(TapDownDetails tapDownDetails) {
-    setState(() => _color = CupertinoColors.lightBackgroundGray);
+    setState(() => _color = CupertinoTheme.of(context).barBackgroundColor);
   }
 
   void _onTapUp(TapUpDetails tapUpDetails) {
-    setState(() => _color = CupertinoColors.white);
+    setState(() => _color = CupertinoTheme.of(context).scaffoldBackgroundColor);
   }
 
   void _onTapCancel() {
-    setState(() => _color = CupertinoColors.white);
+    setState(() => _color = CupertinoTheme.of(context).scaffoldBackgroundColor);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_color == null) {
+      _color = CupertinoTheme.of(context).scaffoldBackgroundColor;
+    }
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,

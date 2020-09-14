@@ -15,7 +15,7 @@ class SettingsRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.extraLightBackgroundGray,
+      backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
       navigationBar: CupertinoNavigationBar(
         middle: Text('Settings'),
       ),

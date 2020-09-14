@@ -37,7 +37,9 @@ void main() {
       child: CupertinoApp(
         title: 'Floower',
         theme: CupertinoThemeData(
-          primaryColor: CupertinoColors.activeBlue
+          primaryColor: CupertinoColors.activeBlue,
+          //brightness: Brightness.dark
+          //brightness: Brightness.light
         ),
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
