@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
@@ -17,7 +18,9 @@ class HomeRoute extends StatelessWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Image.asset('assets/images/floower-trnsp.png', height: 18),
+        middle: CupertinoTheme.of(context).brightness == Brightness.dark
+            ? Image.asset('assets/images/floower-logo-white.png', height: 18)
+            : Image.asset('assets/images/floower-logo-black.png', height: 18),
         trailing: floowerModel.connected
           ? GestureDetector(
             child: Icon(CupertinoIcons.gear),
@@ -42,6 +45,13 @@ class _Floower extends StatelessWidget {
 
   void _onColorPickerChanged(BuildContext context, FloowerColor color) {
     Provider.of<FloowerModel>(context, listen: false).setColor(color);
+  }
+
+  void _onPurchase() async {
+    const url = 'https://floower.io';
+    if (await canLaunch(url)) {
+      await launch(url);
+    }
   }
 
   @override
@@ -125,6 +135,17 @@ class _Floower extends StatelessWidget {
               right: 20,
               bottom: 20,
               child: _BatteryLevelIndicator(),
+            ),
+            Visibility(
+            visible: !floowerModel.connected,
+              child: Positioned(
+                right: 15,
+                bottom: 15,
+                child: CupertinoButton(
+                  child: Text("Get Yours!"),
+                  onPressed: _onPurchase,
+                )
+              )
             )
           ],
         );
