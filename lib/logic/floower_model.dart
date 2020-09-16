@@ -35,6 +35,22 @@ class FloowerModel extends ChangeNotifier {
       _floowerConnector.sendState(color: color.hwColor, duration: Duration(milliseconds: 100));
     });
   }
+  
+  void mock() {
+    _connected = true;
+    _colorsScheme = [
+      FloowerColor.fromHwRGB(127, 127, 127),
+      FloowerColor.fromHwRGB(127, 70, 0),
+      FloowerColor.fromHwRGB(127, 30, 0),
+      FloowerColor.fromHwRGB(127, 2, 0),
+      FloowerColor.fromHwRGB(127, 0, 50),
+      FloowerColor.fromHwRGB(127, 0, 127),
+      FloowerColor.fromHwRGB(0, 20, 127),
+      FloowerColor.fromHwRGB(0, 127, 0),
+    ];
+    _batteryLevel = 75;
+    notifyListeners();
+  }
 
   bool get connected {
     return _connected;
@@ -139,12 +155,12 @@ class FloowerColor {
     return FloowerColor._(TinyColor(displayColor).darken(50));
   }
 
-  static FloowerColor fromHwColor(Color displayColor) {
-    return FloowerColor._(TinyColor(displayColor));
+  static FloowerColor fromHwColor(Color hwColor) {
+    return FloowerColor._(TinyColor(hwColor));
   }
 
   static FloowerColor fromHwRGB(int red, int green, int blue) {
-    return FloowerColor._(TinyColor.fromRGB(r: red, g: green, b: blue));
+    return FloowerColor._(TinyColor.fromRGB(r: red, g: green, b: blue, a: 255));
   }
 
   @override

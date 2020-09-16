@@ -39,7 +39,7 @@ void main() {
         theme: CupertinoThemeData(
           primaryColor: CupertinoColors.activeBlue,
           //brightness: Brightness.dark
-          //brightness: Brightness.light
+          brightness: Brightness.light
         ),
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
