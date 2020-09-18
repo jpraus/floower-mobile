@@ -12,10 +12,17 @@ class FloowerModel extends ChangeNotifier {
 
   Debouncer _sendDebouncer = Debouncer(duration: Duration(milliseconds: 50));
 
+  // read/write
   int _petalsOpenLevel = 0; // TODO read from state
   FloowerColor _color = FloowerColor.black;
   List<FloowerColor> _colorsScheme; // max 10 colos
+  String _name;
 
+  // read only
+  int _serialNumber;
+  String _modelName;
+  int _firmwareVersion;
+  int _hardwareRevision;
   int _batteryLevel = -1; // -1 = unknown
 
   FloowerModel(this._floowerConnector) {
@@ -23,6 +30,11 @@ class FloowerModel extends ChangeNotifier {
   }
 
   FloowerColor get color => _color;
+  String get name => _name;
+  int get serialNumber => _serialNumber;
+  String get modelName => _modelName;
+  int get firmwareVersion => _firmwareVersion;
+  int get hardwareRevision => _hardwareRevision;
   int get batteryLevel => _batteryLevel;
 
   void setColor(FloowerColor color) {
@@ -32,8 +44,15 @@ class FloowerModel extends ChangeNotifier {
     print("Change color to $color");
 
     _sendDebouncer.debounce(() {
-      _floowerConnector.sendState(color: color.hwColor, duration: Duration(milliseconds: 100));
+      _floowerConnector.writeState(color: color.hwColor, duration: Duration(milliseconds: 100));
     });
+  }
+
+  void setColorScheme(List<FloowerColor> colorScheme) {
+    _colorsScheme = colorScheme;
+    notifyListeners();
+
+    _floowerConnector.writeColorScheme(colorScheme: colorScheme);
   }
   
   void mock() {
@@ -48,7 +67,13 @@ class FloowerModel extends ChangeNotifier {
       FloowerColor.fromHwRGB(0, 20, 127),
       FloowerColor.fromHwRGB(0, 127, 0),
     ];
+    _name = "Floower Mockup";
     _batteryLevel = 75;
+    _serialNumber = 0;
+    _modelName = "Mockup";
+    _firmwareVersion = 0;
+    _hardwareRevision = 0;
+
     notifyListeners();
   }
 
@@ -58,14 +83,14 @@ class FloowerModel extends ChangeNotifier {
 
   void openPetals() {
     _sendDebouncer.debounce(() {
-      _floowerConnector.sendState(openLevel: 100, duration: Duration(seconds: 5));
+      _floowerConnector.writeState(openLevel: 100, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 100;
   }
 
   void closePetals() {
     _sendDebouncer.debounce(() {
-      _floowerConnector.sendState(openLevel: 0, duration: Duration(seconds: 5));
+      _floowerConnector.writeState(openLevel: 0, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 0;
   }
@@ -110,6 +135,18 @@ class FloowerModel extends ChangeNotifier {
         notifyListeners();
       }
     });
+
+    _loadFloowerInformation();
+  }
+
+  void _loadFloowerInformation() async {
+    _name = await _floowerConnector.readName();
+    _serialNumber = await _floowerConnector.readSerialNumber();
+    _modelName = await _floowerConnector.readModelName();
+    _firmwareVersion = await _floowerConnector.readFirmwareVersion();
+    _hardwareRevision = await _floowerConnector.readHardwareRevision();
+
+    notifyListeners();
   }
 
   void _onFloowerDisconnected() {

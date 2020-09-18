@@ -99,7 +99,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
     Color color = Colors.yellowAccent;
 
     // try to send pairing command to change color and open a bit
-    SendResult result = await widget.floowerConnector.sendState(openLevel: 20, color: color, duration: transitionDuration);
+    WriteResult result = await widget.floowerConnector.writeState(openLevel: 20, color: color, duration: transitionDuration);
     if (!result.success) {
       setState(() {
         _failedMessage = result.errorMessage;
@@ -109,7 +109,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
     else {
       // if success close again
       await new Future.delayed(transitionDuration);
-      await widget.floowerConnector.sendState(openLevel: 0, color: color, duration: transitionDuration);
+      await widget.floowerConnector.writeState(openLevel: 0, color: color, duration: transitionDuration);
 
       setState(() => _state = _ConnectionState.paired);
     }
@@ -132,7 +132,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
   }
 
   void _onPair(BuildContext context) async {
-    await widget.floowerConnector.sendState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500));
+    await widget.floowerConnector.writeState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500));
     widget.floowerConnector.pair();
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }

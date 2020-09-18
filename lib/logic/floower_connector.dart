@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Floower/logic/floower_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -25,7 +26,7 @@ class FloowerConnector extends ChangeNotifier {
 
   // Floower custom profile
   final Uuid FLOOWER_SERVICE_UUID = Uuid.parse("28e17913-66c1-475f-a76e-86b5242f4cec");
-  final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string, RO
+  final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string, RW
   final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B), RO
   final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode), WO
   final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
@@ -48,23 +49,17 @@ class FloowerConnector extends ChangeNotifier {
     return _device;
   }
 
-  Future<SendResult> sendState({
+  Future<WriteResult> writeState({
       int openLevel,
       Color color,
       Duration duration = const Duration(seconds: 1), // max 25s
-    }) async {
-
-    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
-    print("Sending state (open level + color)");
+    }) {
+    print("Writing state: petals=$openLevel% color=$color duration=$duration");
 
     // compute mode
     int mode = 0;
-    if (color != null) {
-      mode += 1;
-    }
-    if (openLevel != null) {
-      mode += 2;
-    }
+    mode += color != null ? 1 : 0;
+    mode += openLevel != null ? 2 : 0;
 
     // 6 bytes data packet
     List<int> value = List();
@@ -75,31 +70,58 @@ class FloowerConnector extends ChangeNotifier {
     value.add((duration.inMilliseconds / 100).round());
     value.add(mode);
 
-    SendResult result = await _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+    return _writeCharacteristic(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_STATE_CHANGE_UUID,
+        value: value,
+        allowPairing: true
+    );
+  }
+
+  Future<WriteResult> writeColorScheme({List<FloowerColor> colorScheme}) {
+    List<int> value = colorScheme
+      .map((color) => color.hwColor)
+      .map((color) => [color.red, color.green, color.blue])
+      .expand((color) => color)
+      .toList();
+
+    print("Writing color scheme: $value");
+    return _writeCharacteristic(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_COLORS_SCHEME_UUID,
+        value: value
+    );
+  }
+
+  Future<WriteResult> _writeCharacteristic({
+    @required Uuid serviceId,
+    @required Uuid characteristicId,
+    @required List<int> value,
+    bool allowPairing = false
+  }) {
+    assert(connectionState == FloowerConnectionState.connected || (allowPairing && connectionState == FloowerConnectionState.pairing));
+
+    return _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
       deviceId: device.id,
-      serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_STATE_CHANGE_UUID,
+      serviceId: serviceId,
+      characteristicId: characteristicId,
     ), value: value).then((value) {
-      return SendResult();
+      return WriteResult();
     }).catchError((e) {
       // TODO: handle errors
       if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
-        return SendResult(success: false, errorMessage: "Not a compatibile device");
+        return WriteResult(success: false, errorMessage: "Not a compatibile device");
       }
       throw e;
     });
-
-    return result;
   }
 
-  Future<FloowerState> readState() async {
-    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
-
-    return await _ble.readCharacteristic(QualifiedCharacteristic(
-      deviceId: device.id,
+  Future<FloowerState> readState() {
+    return _readCharacteristics(
       serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_STATE_UUID
-    )).then((value) {
+      characteristicId: FLOOWER_STATE_UUID,
+      allowPairing: true
+    ).then((value) {
       assert(value.length == 4);
       assert(value[0] >= 0 && value[0] <= 100); // open level
       assert(value[1] >= 0 && value[1] <= 255); // R
@@ -118,33 +140,76 @@ class FloowerConnector extends ChangeNotifier {
         petalsOpenLevel: value[0],
         color: Color.fromRGBO(value[0], value[1], value[2], 1),
       );
-    }).catchError((e) {
-      // TODO: handle errors
-      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
-        // TODO: response
-        print("Unknown characteristics");
-      }
-      throw e;
     });
   }
 
-  Future<List<Color>> readColorsScheme() async {
-    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
+  Future<String> readName() {
+    return _readCharacteristics(
+      serviceId: FLOOWER_SERVICE_UUID,
+      characteristicId: FLOOWER_NAME_UUID
+    ).then((value) {
+      String name = String.fromCharCodes(value);
+      print("Got name '$name'");
+      return name;
+    });
+  }
 
-    return await _ble.readCharacteristic(QualifiedCharacteristic(
-        deviceId: device.id,
+  Future<String> readModelName() {
+    return _readCharacteristics(
+        serviceId: DEVICE_INFORMATION_UUID,
+        characteristicId: DEVICE_INFORMATION_MODEL_NUMBER_STRING_UUID
+    ).then((value) {
+      String modelName = String.fromCharCodes(value);
+      print("Got model name '$modelName'");
+      return modelName;
+    });
+  }
+
+  Future<int> readSerialNumber() {
+    return _readCharacteristics(
+        serviceId: DEVICE_INFORMATION_UUID,
+        characteristicId: DEVICE_INFORMATION_SERIAL_NUMBER_UUID
+    ).then((value) {
+      int serialNumber = int.tryParse(String.fromCharCodes(value));
+      print("Got serial number '$serialNumber'");
+      return serialNumber;
+    });
+  }
+
+  Future<int> readHardwareRevision() {
+    return _readCharacteristics(
+        serviceId: DEVICE_INFORMATION_UUID,
+        characteristicId: DEVICE_INFORMATION_HARDWARE_REVISION_UUID
+    ).then((value) {
+      int hardwareRevision = int.tryParse(String.fromCharCodes(value));
+      print("Got hardware revision '$hardwareRevision'");
+      return hardwareRevision;
+    });
+  }
+
+  Future<int> readFirmwareVersion() {
+    return _readCharacteristics(
+        serviceId: DEVICE_INFORMATION_UUID,
+        characteristicId: DEVICE_INFORMATION_FIRMWARE_REVISION_UUID
+    ).then((value) {
+      int firmwareVersion = int.tryParse(String.fromCharCodes(value));
+      print("Got firmware version '$firmwareVersion'");
+      return firmwareVersion;
+    });
+  }
+
+  Future<List<Color>> readColorsScheme() {
+    return _readCharacteristics(
         serviceId: FLOOWER_SERVICE_UUID,
         characteristicId: FLOOWER_COLORS_SCHEME_UUID
-    )).then((value) {
+    ).then((value) {
       assert(value.length % 3 == 0);
       for (int byte in value) {
         if (byte < 0 || byte > 255) {
           throw ValueException("RGB color values our of range");
         }
       }
-
       print("Got colors scheme " + value.toString());
-
       int count = (value.length / 3).floor();
       List<Color> colors = [];
       for (int c = 0; c < count; c++) {
@@ -152,12 +217,26 @@ class FloowerConnector extends ChangeNotifier {
         colors.add(Color.fromRGBO(value[byte], value[byte + 1], value[byte + 2], 1));
       }
       return colors;
-    }).catchError((e) {
+    });
+  }
+
+  Future<List<int>> _readCharacteristics({
+    @required Uuid serviceId,
+    @required Uuid characteristicId,
+    bool allowPairing = false
+  }) {
+    assert(connectionState == FloowerConnectionState.connected || (allowPairing && connectionState == FloowerConnectionState.pairing));
+
+    return _ble.readCharacteristic(QualifiedCharacteristic(
+        deviceId: device.id,
+        serviceId: serviceId,
+        characteristicId: characteristicId
+    )).catchError((e) {
       // TODO: handle errors
-      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
-        // TODO: response
-        print("Unknown characteristics");
-      }
+      //if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+      // TODO: response
+      //print("Unknown characteristics");
+      //}
       throw e;
     });
   }
@@ -312,11 +391,11 @@ class ValueException implements Exception {
   }
 }
 
-class SendResult {
+class WriteResult {
   final bool success;
   final String errorMessage;
 
-  SendResult({
+  WriteResult({
     this.success = true,
     this.errorMessage
   });
