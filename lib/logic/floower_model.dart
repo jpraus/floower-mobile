@@ -48,6 +48,15 @@ class FloowerModel extends ChangeNotifier {
     });
   }
 
+  void setName(String name) {
+    _name = name;
+    notifyListeners();
+
+    print("Change name to $name");
+
+    _floowerConnector.writeName(name);
+  }
+
   void setColorScheme(List<FloowerColor> colorScheme) {
     _colorsScheme = colorScheme;
     notifyListeners();
@@ -175,7 +184,11 @@ class FloowerColor {
 
   FloowerColor._(this._hwColor);
 
-  Color get displayColor => _hwColor.lighten(50).color;
+  Color get displayColor {
+    return _hwColor.color;
+    int lighten = (_hwColor.getBrightness() / 5).round();
+    return _hwColor.lighten(lighten).color;
+  }
   Color get hwColor => _hwColor.color;
 
   bool isBlack() {
@@ -189,7 +202,9 @@ class FloowerColor {
   static FloowerColor black = FloowerColor.fromHwRGB(0, 0, 0);
 
   static FloowerColor fromDisplayColor(Color displayColor) {
-    return FloowerColor._(TinyColor(displayColor).darken(50));
+    return FloowerColor._(TinyColor(displayColor));
+    TinyColor color = TinyColor(displayColor);
+    return FloowerColor._(color.darken((color.getBrightness() / 5).round()));
   }
 
   static FloowerColor fromHwColor(Color hwColor) {

@@ -28,6 +28,15 @@ class _SettingNameDialogState extends State<SettingNameDialog> {
     super.dispose();
   }
 
+  void _onSave(BuildContext context) {
+    String name = _nameTextController.text;
+    if (!name.isEmpty) {
+      FloowerModel floowerModel = Provider.of<FloowerModel>(context, listen: false);
+      floowerModel.setName(name);
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_textSet) {
@@ -44,26 +53,26 @@ class _SettingNameDialogState extends State<SettingNameDialog> {
       body: CustomScrollView(
         slivers: <Widget>[
           new CupertinoSliverNavigationBar(
-              largeTitle: const Text("Floower Name"),
-              automaticallyImplyLeading: false,
-              leading: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Icon(CupertinoIcons.clear_thick),
-              ),
-              padding: EdgeInsetsDirectional.only(start: 10, top: 10, bottom: 10, end: 10)
+            largeTitle: const Text("Floower Name"),
+            automaticallyImplyLeading: false,
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Icon(CupertinoIcons.clear_thick, color: CupertinoColors.label),
+            ),
           ),
           SliverList(
             delegate: SliverChildListDelegate([
               SizedBox(height: 18),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 18),
-                child: Text("Distinguish your Floower from others by giving it a unique name.", style: TextStyle(fontSize: 20, color: CupertinoColors.inactiveGray)),
+                child: Text("Give your Floower a unique name to distinguish it from others. The name will be changed after the Floower is restarted.",
+                    style: TextStyle(fontSize: 20, color: CupertinoColors.inactiveGray)),
               ),
               SizedBox(height: 18),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 18),
                 child: CupertinoTextField(
-                  maxLength: 25,
+                  maxLength: FloowerConnector.MAX_NAME_LENGTH,
                   maxLengthEnforced: true,
                   maxLines: 1,
                   padding: EdgeInsets.all(18),
@@ -85,7 +94,7 @@ class _SettingNameDialogState extends State<SettingNameDialog> {
       floatingActionButton: FloatingActionButton(
         child: Icon(CupertinoIcons.right_chevron),
         backgroundColor: _valid ? CupertinoColors.activeBlue : CupertinoColors.inactiveGray,
-        onPressed: null,
+        onPressed: _valid ? () => _onSave(context) : null,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

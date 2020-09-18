@@ -33,6 +33,7 @@ dependencies:
   url_launcher: ^5.5.3
   reorderables: ^0.3.2
   modal_bottom_sheet: ^0.2.1-dev
+  flutter_colorpicker: ^0.3.4
 
 dev_dependencies:
   flutter_test:

@@ -9,6 +9,8 @@ import 'package:flutter_reactive_ble/src/model/write_characteristic_info.dart';
 
 class FloowerConnector extends ChangeNotifier {
 
+  static const int MAX_NAME_LENGTH = 25;
+
   // https://docs.springcard.com/books/SpringCore/Host_interfaces/Physical_and_Transport/Bluetooth/Standard_Services
   // Device Information profile
   final Uuid DEVICE_INFORMATION_UUID = Uuid.parse("180A");
@@ -75,6 +77,18 @@ class FloowerConnector extends ChangeNotifier {
         characteristicId: FLOOWER_STATE_CHANGE_UUID,
         value: value,
         allowPairing: true
+    );
+  }
+
+  Future<WriteResult> writeName(String name) {
+    if (name.isEmpty || name.length > MAX_NAME_LENGTH) {
+      throw ValueException("Name cannot be empty or longer then $MAX_NAME_LENGTH");
+    }
+
+    return _writeCharacteristic(
+      serviceId: FLOOWER_SERVICE_UUID,
+      characteristicId: FLOOWER_NAME_UUID,
+      value: name.codeUnits
     );
   }
 

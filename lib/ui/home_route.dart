@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
-import 'package:Floower/ui/settings_route.dart';
+import 'package:Floower/ui/settings/settings_route.dart';
 
 class HomeRoute extends StatelessWidget {
   static const ROUTE_NAME = '/';

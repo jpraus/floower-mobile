@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:reorderables/reorderables.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'package:Floower/logic/floower_model.dart';
@@ -11,6 +8,7 @@ import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:Floower/ui/settings/settings_name_dialog.dart';
+import 'package:Floower/ui/settings/settings_color_scheme.dart';
 
 class SettingsRoute extends StatelessWidget {
   static const ROUTE_NAME = '/settings';
@@ -43,29 +41,8 @@ class _SettingsScreen extends StatelessWidget {
     showCupertinoModalBottomSheet(
       expand: true,
       context: context,
-      backgroundColor: Colors.white,
       builder: (context, scrollController) => SettingNameDialog()
     );
-/*
-    Navigator.push(context, CupertinoPageRoute(
-      builder: (context) => SafeArea(
-        child: Container(color: Colors.red),
-      ),
-      title: "Title",
-      fullscreenDialog: true
-    ));
-
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: CupertinoPopupSurface(
-            child: CupertinoTextField(
-            ),
-          ),
-        );
-      }
-    );*/
   }
 
   @override
@@ -79,7 +56,7 @@ class _SettingsScreen extends StatelessWidget {
     column.add(CupertinoList(
       children: [
         CupertinoListItem(
-          title: Text("Floower Connected"),
+          title: Text("Connected"),
           trailing: GestureDetector(
             child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
             onTap: () => _onDisconnect(context),
@@ -109,9 +86,8 @@ class _SettingsScreen extends StatelessWidget {
       ],
     ));
 
-
     // color scheme section
-    column.add(_ColorSchemePicker(
+    column.add(ColorSchemePicker(
       floowerModel: floowerModel,
     ));
 
@@ -144,84 +120,3 @@ class _SettingsScreen extends StatelessWidget {
     );
   }
 }
-
-class _ColorSchemePicker extends StatefulWidget {
-  FloowerModel floowerModel;
-
-  _ColorSchemePicker({
-    Key key,
-    @required this.floowerModel
-  }) : super(key: key);
-
-  @override
-  _ColorSchemePickerState createState() => _ColorSchemePickerState();
-}
-
-class _ColorSchemePickerState extends State<_ColorSchemePicker> {
-
-  List<FloowerColor> _colorScheme;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.floowerModel.getColorsScheme().then((colorScheme) {
-      setState(() {
-        _colorScheme = colorScheme;
-      });
-    });
-  }
-
-  void _onColorTap() {
-
-  }
-
-  void _onColorLongPress() {
-
-  }
-
-  void _onColorReorder(oldIndex, newIndex) {
-    FloowerColor color = _colorScheme.removeAt(oldIndex);
-    _colorScheme.insert(newIndex, color);
-    widget.floowerModel.setColorScheme(_colorScheme);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_colorScheme == null) {
-      return SizedBox(width: 0, height: 0);
-    }
-
-    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
-    List<Widget> items = _colorScheme.map((color) => GestureDetector(
-      onLongPress: _onColorTap,
-      onTap: _onColorLongPress,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.displayColor,
-            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.4 : 0.2))
-        ),
-      ),
-    )).toList();
-
-    return CupertinoList(
-      margin: EdgeInsets.only(top: 35),
-      heading: Text("Color Scheme"),
-      children: [Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(18),
-        color: Colors.white,
-        child: ReorderableWrap(
-          children: items,
-          spacing: 16,
-          runSpacing: 16,
-          needsLongPressDraggable: false,
-          onReorder: _onColorReorder,
-        ),
-      )],
-    );
-  }
-}
-

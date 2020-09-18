@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
 import 'package:Floower/ui/connect/connect_route.dart';
-import 'package:Floower/ui/settings_route.dart';
+import 'package:Floower/ui/settings/settings_route.dart';
 import 'package:Floower/ui/home_route.dart';
 
 void main() {
@@ -22,7 +22,7 @@ void main() {
   final ble = FlutterReactiveBle();
   final floowerConnector = FloowerConnector(ble);
   final floowerModel = FloowerModel(floowerConnector);
-  floowerModel.mock();
+  //floowerModel.mock();
   ble.logLevel = LogLevel.verbose;
 
   runApp(
