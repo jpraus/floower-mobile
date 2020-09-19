@@ -96,7 +96,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
     setState(() => _state = _ConnectionState.pairing);
 
     Duration transitionDuration = const Duration(milliseconds: 500);
-    Color color = Colors.yellowAccent;
+    Color color = FloowerConnector.COLOR_YELLOW.hwColor;
 
     // try to send pairing command to change color and open a bit
     WriteResult result = await widget.floowerConnector.writeState(openLevel: 20, color: color, duration: transitionDuration);
@@ -226,7 +226,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
                 startRadius: 50,
                 endRadius: imageSize / 2,
                 endOpacity: 1,
-                color: Colors.yellow,
+                color: FloowerConnector.COLOR_YELLOW.displayColor,
                 centerOffset: centerOffset,
                 key: UniqueKey()
             ),
@@ -236,7 +236,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
                 endRadius: data.size.height,
                 startOpacity: 0.4,
                 endOpacity: 0,
-                color: Colors.yellow,
+                color: FloowerConnector.COLOR_YELLOW.displayColor,
                 centerOffset: centerOffset,
                 key: UniqueKey()
             ),
@@ -246,7 +246,7 @@ class _ConnectingScreenState extends State<_ConnectingScreen> {
               endRadius: data.size.height,
               startOpacity: 0.5,
               endOpacity: 0,
-              color: Colors.yellow,
+              color: FloowerConnector.COLOR_YELLOW.displayColor,
               centerOffset: centerOffset,
               key: UniqueKey()
             )

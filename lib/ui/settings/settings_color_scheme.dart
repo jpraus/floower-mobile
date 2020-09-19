@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:reorderables/reorderables.dart';
@@ -42,7 +43,12 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
     if (_removing) {
       setState(() {
         _colorScheme.removeAt(index);
+        if (_colorScheme.length == 1) {
+          _removing = false; // dot allow to remove last color
+        }
       });
+      // upload to Floower
+      widget.floowerModel.setColorScheme(_colorScheme);
     }
     else {
       showCupertinoModalBottomSheet(
@@ -56,7 +62,8 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
               _colorScheme.removeAt(index);
               _colorScheme.insert(index, color);
             });
-            // TODO: persist
+            // upload to Floower
+            widget.floowerModel.setColorScheme(_colorScheme);
           }
         )
       );
@@ -64,25 +71,30 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
   }
 
   void _onColorAdd() {
-    showCupertinoModalBottomSheet(
-      expand: true,
-      context: context,
-      builder: (context, scrollController) => _ColorPickerDialog(
-        floowerModel: widget.floowerModel,
-        colorPicked: (color) {
-          setState(() {
-            _colorScheme.add(color);
-          });
-          // TODO: persist
-        }
-      )
-    );
+    if (_colorScheme.length < FloowerConnector.MAX_SCHEME_COLORS) {
+      showCupertinoModalBottomSheet(
+        expand: true,
+        context: context,
+        builder: (context, scrollController) => _ColorPickerDialog(
+          floowerModel: widget.floowerModel,
+          colorPicked: (color) {
+            setState(() {
+              _colorScheme.add(color);
+            });
+            // upload to Floower
+            widget.floowerModel.setColorScheme(_colorScheme);
+          }
+        )
+      );
+    }
   }
 
   void _onColorLongPress() {
-    setState(() {
-      _removing = true;
-    });
+    if (_colorScheme.length > 1) {
+      setState(() {
+        _removing = true;
+      });
+    }
   }
 
   void _onRemovingDone() {
@@ -99,8 +111,8 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       FloowerColor color = _colorScheme.removeAt(oldIndex);
       _colorScheme.insert(newIndex, color);
     });
-    // TODO: persist
-    //widget.floowerModel.setColorScheme(_colorScheme);
+    // upload to Floower
+    widget.floowerModel.setColorScheme(_colorScheme);
   }
 
   @override
@@ -152,7 +164,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
         ),
       ));
     }
-    else {
+    else if (_colorScheme.length < FloowerConnector.MAX_SCHEME_COLORS) {
       items.add(ReorderableWidget(
         reorderable: false,
         key: UniqueKey(),
@@ -190,7 +202,6 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           runSpacing: 16,
           needsLongPressDraggable: false,
           buildDraggableFeedback: (context, BoxConstraints constraints, Widget child) {
-            print("feeback");
             return Transform(
               transform: new Matrix4.rotationZ(0),
               alignment: FractionalOffset.topLeft,
@@ -223,7 +234,7 @@ class _ColorPickerDialog extends StatefulWidget {
 
 class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
-  HSVColor currentHsvColor = HSVColor.fromColor(Colors.white);
+  HSVColor currentHsvColor = hslToHsv(HSLColor.fromAHSL(1, 180, 1, 0.5));
 
   @override
   void initState() {
@@ -272,6 +283,24 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   Widget build(BuildContext context) {
     TinyColor currentColor = TinyColor.fromHSV(currentHsvColor);
 
+    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
+    List<Widget> defaultColors = [];
+
+    for (FloowerColor color in FloowerConnector.DEFAULT_SCHEME) {
+      defaultColors.add(GestureDetector(
+        onTap: () => _onChangeColor(color.displayHSVColor),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.displayColor,
+            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0)),
+          ),
+        ),
+      ));
+    }
+
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
@@ -281,20 +310,28 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
             return CustomScrollView(
               slivers: <Widget>[
                 new CupertinoSliverNavigationBar(
-                  largeTitle: const Text("Pick a Color"),
+                  largeTitle: Text(widget.originalColor == null ? "Add New Color" : "Edit Color"),
                   leading: GestureDetector(
-                    onTap: () => _onCancel,
+                    onTap: () => _onCancel(context),
                     child: Icon(CupertinoIcons.clear_thick, color: CupertinoColors.label),
                   ),
-                  trailing: GestureDetector(
+                  /*trailing: GestureDetector(
                     onTap: () => _onSave(context),
                     child: Icon(CupertinoIcons.check_mark_circled_solid),
-                  ),
+                  ),*/
                 ),
                 SliverList(
                   delegate: SliverChildListDelegate([
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 25, vertical: 40),
+                        child: Wrap(
+                          children: defaultColors,
+                          spacing: 16,
+                          runSpacing: 16,
+                        )
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       height: 100,
                       child: ColorPickerSlider(
                         TrackType.hue,
@@ -304,7 +341,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       )
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       height: 100,
                       child: ColorPickerSlider(
                         TrackType.lightness,
@@ -313,7 +350,6 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                         displayThumbColor: true,
                       )
                     ),
-                    SizedBox(height: 18),
                   ]),
                 )
               ],

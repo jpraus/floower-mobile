@@ -12,6 +12,27 @@ class FloowerConnector extends ChangeNotifier {
   static const int MAX_NAME_LENGTH = 25;
   static const int MAX_SCHEME_COLORS = 10;
 
+  // pre-defined colors, keep in sync with firmware
+  static FloowerColor COLOR_RED = FloowerColor.fromHwRGB(156, 0, 0);
+  static FloowerColor COLOR_GREEN = FloowerColor.fromHwRGB(40, 178, 0);
+  static FloowerColor COLOR_BLUE = FloowerColor.fromHwRGB(0, 65, 178);
+  static FloowerColor COLOR_YELLOW = FloowerColor.fromHwRGB(178, 170, 0);
+  static FloowerColor COLOR_ORANGE = FloowerColor.fromHwRGB(178, 64, 0);
+  static FloowerColor COLOR_WHITE = FloowerColor.fromHwRGB(178, 178, 178);
+  static FloowerColor COLOR_PURPLE = FloowerColor.fromHwRGB(148, 0, 178);
+  static FloowerColor COLOR_PINK = FloowerColor.fromHwRGB(178, 0, 73);
+
+  static List<FloowerColor> DEFAULT_SCHEME = [
+    FloowerConnector.COLOR_WHITE,
+    FloowerConnector.COLOR_YELLOW,
+    FloowerConnector.COLOR_ORANGE,
+    FloowerConnector.COLOR_RED,
+    FloowerConnector.COLOR_PINK,
+    FloowerConnector.COLOR_PURPLE,
+    FloowerConnector.COLOR_BLUE,
+    FloowerConnector.COLOR_GREEN,
+  ];
+
   // https://docs.springcard.com/books/SpringCore/Host_interfaces/Physical_and_Transport/Bluetooth/Standard_Services
   // Device Information profile
   final Uuid DEVICE_INFORMATION_UUID = Uuid.parse("180A");

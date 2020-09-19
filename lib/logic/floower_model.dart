@@ -66,16 +66,7 @@ class FloowerModel extends ChangeNotifier {
   
   void mock() {
     _connected = true;
-    _colorsScheme = [
-      FloowerColor.fromHwRGB(127, 127, 127),
-      FloowerColor.fromHwRGB(127, 70, 0),
-      FloowerColor.fromHwRGB(127, 30, 0),
-      FloowerColor.fromHwRGB(127, 2, 0),
-      FloowerColor.fromHwRGB(127, 0, 50),
-      FloowerColor.fromHwRGB(127, 0, 127),
-      FloowerColor.fromHwRGB(0, 20, 127),
-      FloowerColor.fromHwRGB(0, 127, 0),
-    ];
+    _colorsScheme = FloowerConnector.DEFAULT_SCHEME;
     _name = "Floower Mockup";
     _batteryLevel = 75;
     _serialNumber = 0;
@@ -180,12 +171,15 @@ class Debouncer {
 
 class FloowerColor {
 
+  static const int INTENSITY_SHIFT = 30;
+
   final TinyColor _displayColor;
 
   FloowerColor._(this._displayColor);
 
   Color get displayColor => _displayColor.color;
-  Color get hwColor => _displayColor.brighten(-30).color; // intensity down by 30% so it's nice on the display
+  HSVColor get displayHSVColor => _displayColor.toHsv();
+  Color get hwColor => _displayColor.brighten(-INTENSITY_SHIFT).color; // intensity down by 30% so it's nice on the display
 
   bool isBlack() {
     return _displayColor.getBrightness() == 0;
@@ -203,11 +197,11 @@ class FloowerColor {
 
   static FloowerColor fromHwColor(Color hwColor) {
     TinyColor color = TinyColor(hwColor);
-    return FloowerColor._(color.brighten(30)); // intensity down by 30%
+    return FloowerColor._(color.brighten(INTENSITY_SHIFT)); // display intensity up by 30%
   }
 
   static FloowerColor fromHwRGB(int red, int green, int blue) {
-    return FloowerColor._(TinyColor.fromRGB(r: red, g: green, b: blue, a: 255));
+    return FloowerColor._(TinyColor.fromRGB(r: red, g: green, b: blue, a: 255).brighten(INTENSITY_SHIFT)); // display intensity up by 30%
   }
 
   @override
