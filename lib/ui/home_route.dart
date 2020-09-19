@@ -94,7 +94,10 @@ class _Floower extends StatelessWidget {
             Center(
               child: !floowerModel.connected ? Container(
                 padding: EdgeInsets.all(18),
-                color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -142,9 +145,15 @@ class _Floower extends StatelessWidget {
               child: Positioned(
                 right: 15,
                 bottom: 15,
-                child: CupertinoButton(
-                  child: Text("Don't have one yet?"),
-                  onPressed: _onPurchase,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                  ),
+                  child: CupertinoButton(
+                    child: Text("Find out more"),
+                    onPressed: _onPurchase,
+                  ),
                 )
               )
             )
