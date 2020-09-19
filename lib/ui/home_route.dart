@@ -188,7 +188,7 @@ class _ColorPicker extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color.displayColor,
-          border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.4 : 0.2))
+          border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0))
         ),
       ),
       onTap: () => onSelect(color),

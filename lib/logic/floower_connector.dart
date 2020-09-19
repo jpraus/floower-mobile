@@ -10,6 +10,7 @@ import 'package:flutter_reactive_ble/src/model/write_characteristic_info.dart';
 class FloowerConnector extends ChangeNotifier {
 
   static const int MAX_NAME_LENGTH = 25;
+  static const int MAX_SCHEME_COLORS = 10;
 
   // https://docs.springcard.com/books/SpringCore/Host_interfaces/Physical_and_Transport/Bluetooth/Standard_Services
   // Device Information profile

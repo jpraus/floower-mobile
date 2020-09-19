@@ -180,35 +180,30 @@ class Debouncer {
 
 class FloowerColor {
 
-  final TinyColor _hwColor;
+  final TinyColor _displayColor;
 
-  FloowerColor._(this._hwColor);
+  FloowerColor._(this._displayColor);
 
-  Color get displayColor {
-    return _hwColor.color;
-    int lighten = (_hwColor.getBrightness() / 5).round();
-    return _hwColor.lighten(lighten).color;
-  }
-  Color get hwColor => _hwColor.color;
+  Color get displayColor => _displayColor.color;
+  Color get hwColor => _displayColor.brighten(-30).color; // intensity down by 30% so it's nice on the display
 
   bool isBlack() {
-    return _hwColor.getBrightness() == 0;
+    return _displayColor.getBrightness() == 0;
   }
 
   bool isLight() {
-    return _hwColor.isLight();
+    return _displayColor.isLight();
   }
 
-  static FloowerColor black = FloowerColor.fromHwRGB(0, 0, 0);
+  static FloowerColor black = FloowerColor.fromDisplayColor(Colors.black);
 
   static FloowerColor fromDisplayColor(Color displayColor) {
     return FloowerColor._(TinyColor(displayColor));
-    TinyColor color = TinyColor(displayColor);
-    return FloowerColor._(color.darken((color.getBrightness() / 5).round()));
   }
 
   static FloowerColor fromHwColor(Color hwColor) {
-    return FloowerColor._(TinyColor(hwColor));
+    TinyColor color = TinyColor(hwColor);
+    return FloowerColor._(color.brighten(30)); // intensity down by 30%
   }
 
   static FloowerColor fromHwRGB(int red, int green, int blue) {
@@ -217,7 +212,7 @@ class FloowerColor {
 
   @override
   String toString() {
-    Color color = _hwColor.color;
+    Color color = _displayColor.color;
     return "[${color.red},${color.green},${color.blue}]";
   }
 
