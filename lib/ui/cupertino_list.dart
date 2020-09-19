@@ -105,10 +105,10 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
     }
 
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: widget.onTap != null ? widget.onTap : null,
+      onTapDown: widget.onTap != null ? _onTapDown : null,
+      onTapUp: widget.onTap != null ? _onTapUp : null,
+      onTapCancel: widget.onTap != null ? _onTapCancel : null,
+      onTap: widget.onTap,
       child: AnimatedContainer(
         decoration: BoxDecoration(
           color: _color

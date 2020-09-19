@@ -9,6 +9,7 @@ import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:Floower/ui/settings/settings_name_dialog.dart';
 import 'package:Floower/ui/settings/settings_color_scheme.dart';
+import 'package:package_info/package_info.dart';
 
 class SettingsRoute extends StatelessWidget {
   static const ROUTE_NAME = '/settings';
@@ -64,25 +65,33 @@ class _SettingsScreen extends StatelessWidget {
         ),
         CupertinoListItem(
           title: Text("Name"),
-          trailing: GestureDetector(
-            onTap: () => _onNameTap(context),
-            child: Row(
-              children: [
-                Text(floowerModel.name, style: TextStyle(color: CupertinoColors.tertiaryLabel)),
-                Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
-              ],
-            ),
-          ),
-        ),
-        CupertinoListItem(
-          title: Text("Behavior"),
+          onTap: () => _onNameTap(context),
           trailing: Row(
             children: [
-              Text("Blooming Flower", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
-              Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
+              Text(floowerModel.name, style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+              const Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
             ],
           ),
         ),
+        /*CupertinoListItem(
+          title: Text("Behavior"),
+          trailing: Row(
+            children: [
+              const Text("Blooming Flower", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+              const Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
+            ],
+          ),
+        ),*/
+        CupertinoListItem(
+          title: Text("Touch Sensitivity"),
+        ),
+        CupertinoListItem(
+          leading: const Text("Low", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          title: TouchSensitivitySlider(
+            floowerModel: floowerModel,
+          ),
+          trailing: const Text("High", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+        )
       ],
     ));
 
@@ -98,25 +107,77 @@ class _SettingsScreen extends StatelessWidget {
       children: [
         CupertinoListItem(
           title: Text("Serial Number"),
-          trailing: Text(floowerModel.serialNumber?.toString()?.padLeft(4, '0') ?? "", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.serialNumber?.toString()?.padLeft(4, '0') ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
         ),
         CupertinoListItem(
           title: Text("Model"),
-          trailing: Text(floowerModel.modelName ?? "", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.modelName ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
         ),
         CupertinoListItem(
           title: Text("Firmware Version"),
-          trailing: Text(floowerModel.firmwareVersion?.toString() ?? "", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.firmwareVersion?.toString() ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
         ),
         CupertinoListItem(
           title: Text("Hardware Version"),
-          trailing: Text(floowerModel.hardwareRevision?.toString() ?? "", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.hardwareRevision?.toString() ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+        ),
+        CupertinoListItem(
+          title: Text("App Version"),
+          trailing: FutureBuilder(
+            future: PackageInfo.fromPlatform(),
+            builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
+              return Text(snapshot.hasData ? snapshot.data.version : "?", style: const TextStyle(color: CupertinoColors.tertiaryLabel));
+            },
+          )
         ),
       ],
     ));
 
     return ListView(
       children: column,
+    );
+  }
+}
+
+class TouchSensitivitySlider extends StatefulWidget {
+
+  final FloowerModel floowerModel;
+
+  TouchSensitivitySlider({ @required this.floowerModel });
+
+  @override
+  _TouchSensitivitySliderState createState() => _TouchSensitivitySliderState();
+}
+
+class _TouchSensitivitySliderState extends State<TouchSensitivitySlider> {
+
+  double _value;
+
+  @override
+  void initState() {
+    _value = widget.floowerModel.touchTreshold?.toDouble();
+    super.initState();
+  }
+
+  void _onChanged(double value) {
+    setState(() {
+      _value = value;
+    });
+    widget.floowerModel.setTouchTreshold(value.toInt());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_value == null) {
+      return SizedBox();
+    }
+
+    return CupertinoSlider(
+      value: _value,
+      onChanged: _onChanged,
+      min: 35,
+      max: 55,
+      divisions: 20,
     );
   }
 }

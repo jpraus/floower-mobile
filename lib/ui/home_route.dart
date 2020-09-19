@@ -126,6 +126,7 @@ class _Floower extends StatelessWidget {
                   child: Container(
                     width: refHeight / 4.5,
                     height: refHeight / 3.5,
+                    color: Colors.transparent,
                   ),
                 ),
                 onTap: () => floowerModel.isOpen() ? floowerModel.closePetals() : floowerModel.openPetals(),
@@ -142,7 +143,7 @@ class _Floower extends StatelessWidget {
                 right: 15,
                 bottom: 15,
                 child: CupertinoButton(
-                  child: Text("Get Yours!"),
+                  child: Text("Don't have one yet?"),
                   onPressed: _onPurchase,
                 )
               )

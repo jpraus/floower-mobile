@@ -10,13 +10,16 @@ class FloowerModel extends ChangeNotifier {
   final FloowerConnector _floowerConnector;
   bool _connected = false;
 
-  Debouncer _sendDebouncer = Debouncer(duration: Duration(milliseconds: 50));
+  Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
+  Debouncer _touchTresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
+  Debouncer _colorSchemeDebouncer = Debouncer(duration: Duration(seconds: 1));
 
   // read/write
   int _petalsOpenLevel = 0; // TODO read from state
   FloowerColor _color = FloowerColor.black;
   List<FloowerColor> _colorsScheme; // max 10 colos
   String _name;
+  int _touchTreshold;
 
   // read only
   int _serialNumber;
@@ -31,6 +34,7 @@ class FloowerModel extends ChangeNotifier {
 
   FloowerColor get color => _color;
   String get name => _name;
+  int get touchTreshold => _touchTreshold;
   int get serialNumber => _serialNumber;
   String get modelName => _modelName;
   int get firmwareVersion => _firmwareVersion;
@@ -43,7 +47,7 @@ class FloowerModel extends ChangeNotifier {
 
     print("Change color to $color");
 
-    _sendDebouncer.debounce(() {
+    _stateDebouncer.debounce(() {
       _floowerConnector.writeState(color: color.hwColor, duration: Duration(milliseconds: 100));
     });
   }
@@ -61,7 +65,20 @@ class FloowerModel extends ChangeNotifier {
     _colorsScheme = colorScheme;
     notifyListeners();
 
-    _floowerConnector.writeColorScheme(colorScheme: colorScheme);
+    _colorSchemeDebouncer.debounce(() {
+      _floowerConnector.writeColorScheme(colorScheme: colorScheme);
+    });
+  }
+
+  void setTouchTreshold(int touchTreshold) {
+    _touchTreshold = touchTreshold;
+    notifyListeners();
+
+    print("Change touch treshold to $touchTreshold");
+
+    _touchTresholdDebouncer.debounce(() {
+      _floowerConnector.writeTouchTreshold(touchTreshold);
+    });
   }
   
   void mock() {
@@ -82,14 +99,14 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void openPetals() {
-    _sendDebouncer.debounce(() {
+    _stateDebouncer.debounce(() {
       _floowerConnector.writeState(openLevel: 100, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 100;
   }
 
   void closePetals() {
-    _sendDebouncer.debounce(() {
+    _stateDebouncer.debounce(() {
       _floowerConnector.writeState(openLevel: 0, duration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 0;
@@ -141,6 +158,7 @@ class FloowerModel extends ChangeNotifier {
 
   void _loadFloowerInformation() async {
     _name = await _floowerConnector.readName();
+    _touchTreshold = await _floowerConnector.readTouchTreshold();
     _serialNumber = await _floowerConnector.readSerialNumber();
     _modelName = await _floowerConnector.readModelName();
     _firmwareVersion = await _floowerConnector.readFirmwareVersion();

@@ -54,6 +54,7 @@ class FloowerConnector extends ChangeNotifier {
   final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B), RO
   final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode), WO
   final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
+  final Uuid FLOOWER_TOUCH_TRESHOLD_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // touch treshold 1 byte
 
   final FlutterReactiveBle _ble;
 
@@ -111,6 +112,18 @@ class FloowerConnector extends ChangeNotifier {
       serviceId: FLOOWER_SERVICE_UUID,
       characteristicId: FLOOWER_NAME_UUID,
       value: name.codeUnits
+    );
+  }
+
+  Future<WriteResult> writeTouchTreshold(int touchTreshold) {
+    if (touchTreshold < 30 && touchTreshold > 60) {
+      throw ValueException("Invalid touch treshold value");
+    }
+
+    return _writeCharacteristic(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_TOUCH_TRESHOLD_UUID,
+        value: [touchTreshold]
     );
   }
 
@@ -187,6 +200,17 @@ class FloowerConnector extends ChangeNotifier {
       String name = String.fromCharCodes(value);
       print("Got name '$name'");
       return name;
+    });
+  }
+
+  Future<int> readTouchTreshold() {
+    return _readCharacteristics(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_TOUCH_TRESHOLD_UUID
+    ).then((value) {
+      int touchTreshold = value[0];
+      print("Got touch treshold '$touchTreshold'");
+      return touchTreshold;
     });
   }
 

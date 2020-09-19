@@ -1,4 +1,3 @@
-import 'package:Floower/logic/floower_connector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -6,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:Floower/logic/floower_model.dart';
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
 import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
