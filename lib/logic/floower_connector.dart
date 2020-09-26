@@ -177,11 +177,11 @@ class FloowerConnector extends ChangeNotifier {
       assert(value[2] >= 0 && value[2] <= 255); // G
       assert(value[3] >= 0 && value[3] <= 255); // B
 
-      if (value[0] >= 0 || value[0] <= 100) {
-        throw ValueException("Petals open level value our of range");
+      if (value[0] < 0 || value[0] > 100) {
+        throw ValueException("Petals open level value out of range");
       }
       if (value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255 || value[3] < 0 || value[3] > 255) {
-        throw ValueException("RGB color values our of range");
+        throw ValueException("RGB color values out of range");
       }
 
       print("Got state $value");
@@ -266,7 +266,7 @@ class FloowerConnector extends ChangeNotifier {
       assert(value.length % 3 == 0);
       for (int byte in value) {
         if (byte < 0 || byte > 255) {
-          throw ValueException("RGB color values our of range");
+          throw ValueException("RGB color values out of range");
         }
       }
       print("Got colors scheme " + value.toString());

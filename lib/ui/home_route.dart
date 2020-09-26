@@ -132,7 +132,7 @@ class _Floower extends StatelessWidget {
                     color: Colors.transparent,
                   ),
                 ),
-                onTap: () => floowerModel.isOpen() ? floowerModel.closePetals() : floowerModel.openPetals(),
+                onTap: () => floowerModel.togglePetals(),
               ) : SizedBox.shrink(),
             ),
             Positioned(
