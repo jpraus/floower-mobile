@@ -113,12 +113,12 @@ class FloowerModel extends ChangeNotifier {
     _petalsOpenLevel = 0;
   }
 
-  bool togglePetals() {
+  void togglePetals() {
     _stateDebouncer.debounce(() async {
       FloowerState currentState = await _floowerConnector.readState();
       if (currentState != null) {
         int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : 100;
-        await _floowerConnector.writeState(openLevel: newOpenLevel, duration: Duration(seconds: 5));
+        await _floowerConnector.writeState(openLevel: newOpenLevel, color: color.hwColor, duration: Duration(seconds: 5));
       }
     });
   }
