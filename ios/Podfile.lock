@@ -4,18 +4,24 @@ PODS:
     - Flutter
     - Protobuf (~> 3.5)
     - SwiftProtobuf (~> 1.0)
+  - package_info (0.0.1):
+    - Flutter
   - "permission_handler (5.0.1+1)":
     - Flutter
   - Protobuf (3.13.0)
   - SwiftProtobuf (1.12.0)
   - system_setting (0.1.1):
     - Flutter
+  - url_launcher (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_reactive_ble (from `.symlinks/plugins/flutter_reactive_ble/ios`)
+  - package_info (from `.symlinks/plugins/package_info/ios`)
   - permission_handler (from `.symlinks/plugins/permission_handler/ios`)
   - system_setting (from `.symlinks/plugins/system_setting/ios`)
+  - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
 
 SPEC REPOS:
   trunk:
@@ -27,18 +33,24 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_reactive_ble:
     :path: ".symlinks/plugins/flutter_reactive_ble/ios"
+  package_info:
+    :path: ".symlinks/plugins/package_info/ios"
   permission_handler:
     :path: ".symlinks/plugins/permission_handler/ios"
   system_setting:
     :path: ".symlinks/plugins/system_setting/ios"
+  url_launcher:
+    :path: ".symlinks/plugins/url_launcher/ios"
 
 SPEC CHECKSUMS:
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
   flutter_reactive_ble: c94c6cc709a808656e1963c828663b2536c72010
+  package_info: 873975fc26034f0b863a300ad47e7f1ac6c7ec62
   permission_handler: eac8e15b4a1a3fba55b761d19f3f4e6b005d15b6
   Protobuf: 3dac39b34a08151c6d949560efe3f86134a3f748
   SwiftProtobuf: 4ef85479c18ca85b5482b343df9c319c62bda699
   system_setting: 92cc591ade5113a6fd57ed0702dc5eaa9f5337e5
+  url_launcher: 6fef411d543ceb26efce54b05a0a40bfd74cbbef
 
 PODFILE CHECKSUM: 0dbd5a87e0ace00c9610d2037ac22083a01f861d
 
