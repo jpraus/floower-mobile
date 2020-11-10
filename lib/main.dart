@@ -39,6 +39,7 @@ void main() {
           //brightness: Brightness.dark
           brightness: Brightness.light
         ),
+        debugShowCheckedModeBanner: false,
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
           HomeRoute.ROUTE_NAME: (context) => HomeRoute(),
