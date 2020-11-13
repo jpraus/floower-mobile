@@ -33,29 +33,34 @@ class BleScanner {
       }
     });
     _timeoutTimer?.cancel();
-    if (timeout.inMilliseconds > 0) {
+    if (timeout != null && timeout.inMilliseconds > 0) {
       _timeoutTimer = Timer(timeout, () {
-        stopScan();
+        _stopScan(timeOuted: true);
       });
     }
     _pushState();
   }
 
-  void _pushState() {
+  void _pushState({bool timeOuted = false}) {
     _stateStreamController.add(
       BleScannerState(
         discoveredDevices: _devices,
         scanIsInProgress: _subscription != null,
+        timeOuted: timeOuted
       ),
     );
   }
 
-  Future<void> stopScan() async {
+  Future<void> _stopScan({bool timeOuted = false}) async {
     await _subscription?.cancel();
     _subscription = null;
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
-    _pushState();
+    _pushState(timeOuted: timeOuted);
+  }
+
+  Future<void> stopScan() async {
+    _stopScan();
   }
 
   Future<void> dispose() async {
@@ -70,8 +75,10 @@ class BleScannerState {
   const BleScannerState({
     @required this.discoveredDevices,
     @required this.scanIsInProgress,
+    @required this.timeOuted,
   });
 
   final List<DiscoveredDevice> discoveredDevices;
   final bool scanIsInProgress;
+  final bool timeOuted;
 }
