@@ -23,7 +23,7 @@ class DiscoverRoute extends StatelessWidget {
     //final DiscoverRouteArguments args = ModalRoute.of(context).settings.arguments;
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
+      //backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
       navigationBar: CupertinoNavigationBar(
         middle: Text('Connect Your Floower'),
       ),
@@ -65,8 +65,6 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
   BleStatus _bleStatus = BleStatus.unknown;
 
   bool askedForPermission = false;
-  bool initialScanning = true;
-  bool floowerActivated = false;
 
   @override
   void initState() {
@@ -100,18 +98,20 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
       case BleStatus.poweredOff:
         // BLE off screen
         return _buildBluetoothUnavailableScreen(
+            icon: Icons.bluetooth_disabled,
           title: 'Bluetooth is OFF',
           message: 'Please turn on Bluetooth in order to discover near-by Floowers and connect with them.',
-          buttonText: 'Turn it ON',
+          buttonText: 'Open Preferences',
           onButtonPressed: () => SystemSetting.goto(SettingTarget.BLUETOOTH)
         );
 
       case BleStatus.locationServicesDisabled:
         // location service off screen
         return _buildBluetoothUnavailableScreen(
+            icon: Icons.location_disabled,
             title: 'Location Service is OFF',
             message: 'Please turn on Location service in order to discover near-by Floowers and connect with them.',
-            buttonText: 'Turn it ON',
+            buttonText: 'Open Preferences',
             onButtonPressed: () => SystemSetting.goto(SettingTarget.LOCATION)
         );
 
@@ -121,23 +121,26 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
         }
         // unauthorized screen
         return _buildBluetoothUnavailableScreen(
+          icon: Icons.bluetooth_disabled,
           title: 'Bluetooth not allowed',
           message: 'Please allow Floower app to use your location service in order to discover near-by Floowers and connect with them.',
           buttonText: 'Open Preferences',
           onButtonPressed: () => openAppSettings()
         );
 
-      case BleStatus.unknown:
-      case BleStatus.unsupported:
+      //case BleStatus.unknown:
+      //case BleStatus.unsupported:
+      default:
         // ble dead screen
         return _buildBluetoothUnavailableScreen(
+            icon: Icons.bluetooth_disabled,
             title: 'Bluetooth not supported',
             message: 'This device seems to not support Bluetooth, there is no way how to connect to your Floower.'
         );
     }
   }
 
-  Widget _buildBluetoothUnavailableScreen({String title, String message, String buttonText, VoidCallback onButtonPressed}) {
+  Widget _buildBluetoothUnavailableScreen({IconData icon, String title, String message, String buttonText, VoidCallback onButtonPressed}) {
     return Container(
       alignment: Alignment.center,
       padding: EdgeInsets.all(20),
@@ -146,7 +149,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Icon(Icons.bluetooth_disabled, size: 80, color: CupertinoColors.inactiveGray),
+            Icon(icon, size: 80, color: CupertinoColors.inactiveGray),
             const SizedBox(height: 20),
             Text(title, style: TextStyle(fontSize: 20, color: CupertinoColors.inactiveGray)),
             const SizedBox(height: 20),
@@ -192,7 +195,6 @@ class _ScanScreenState extends State<_ScanScreen> {
     scanIsInProgress: false,
   );
   Timer _tryConnectTimer;
-
   bool _scanningStarted = false;
 
   @override
@@ -206,16 +208,29 @@ class _ScanScreenState extends State<_ScanScreen> {
 
   @override
   void dispose() {
+    _tryConnectTimer?.cancel();
     _bleScannerStateSubscription?.cancel();
     _bleScanner?.dispose();
     super.dispose();
   }
 
+  void _startScanning() {
+    _bleScanner.startScan(
+        serviceIds: [],
+        timeout: Duration(seconds: 60)
+    );
+    _scanningStarted = true;
+    _tryConnectTimer?.cancel();
+  }
+
+  void _stopScanning() {
+    _bleScanner.stopScan();
+  }
+
   void _onScannerState(BleScannerState state) {
     this.setState(() {
       _bleScannerState = state;
-      if (_tryConnectTimer?.isActive == false && state.scanIsInProgress == true && state.discoveredDevices.isNotEmpty) {
-        print("Try connect");
+      if (_tryConnectTimer?.isActive != true && state.scanIsInProgress == true && state.discoveredDevices.isNotEmpty) {
         _tryConnectTimer = Timer(Duration(seconds: 3), _tryConnect);
       }
       if (state.timeOuted == true && state.discoveredDevices.isEmpty) {
@@ -224,38 +239,10 @@ class _ScanScreenState extends State<_ScanScreen> {
     });
   }
 
-  void _startScanning() {
-    _bleScanner.startScan(
-      serviceIds: [],
-      timeout: Duration(seconds: 5)
-    );
-    _scanningStarted = true;
-    _tryConnectTimer?.cancel();
-  }
-
   void _tryConnect() {
     if (_bleScannerState.discoveredDevices.length == 1) {
       _connectToDevice(_bleScannerState.discoveredDevices[0]);
     }
-  }
-
-  void _stopScanning() {
-    _bleScanner.stopScan();
-  }
-
-  void _noDeviceFound() {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => new CupertinoAlertDialog(
-        title: Text("No Floower discovered"),
-        content: Text("What to do now?\nCheck if your Floower is activated, move it closer to the device, or contact us!"),
-        actions: <Widget>[
-          new CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: new Text("OK"))
-        ],
-      ),
-    );
   }
 
   void _connectToDevice(DiscoveredDevice device) async {
@@ -267,6 +254,21 @@ class _ScanScreenState extends State<_ScanScreen> {
     );
   }
 
+  void _noDeviceFound() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => new CupertinoAlertDialog(
+        title: Text("No Floower discovered"),
+        content: Text("What to do now?\nCheck if your Floower is activated, move it closer to the device, or contact us!"),
+        actions: <Widget>[
+          new CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: new Text("OK"))
+        ],
+      ),
+    );
+  }
+
   void _onCancel(BuildContext context) {
     _stopScanning();
     Navigator.pop(context); // back to scan screen
@@ -274,8 +276,7 @@ class _ScanScreenState extends State<_ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(_scanningStarted);
-    if (_bleScannerState.discoveredDevices.length > 1 || (widget.scanList && _bleScannerState.scanIsInProgress)) {
+    if (_bleScannerState.discoveredDevices.length > 1) {
       return _buildScanList();
     }
     else if (_bleScannerState.scanIsInProgress) {
@@ -414,7 +415,7 @@ class TouchHandAnimationState extends State<TouchHandAnimation> with SingleTicke
       duration: widget.duration,
     );
 
-    _touchAnimation = Tween<double>(begin: widget.imageSize / 2, end: widget.imageSize / 2.4).animate(_controller);
+    _touchAnimation = Tween<double>(begin: -30, end: -10).animate(_controller);
     _touchAnimation.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _controller.reverse();
@@ -439,42 +440,24 @@ class TouchHandAnimationState extends State<TouchHandAnimation> with SingleTicke
         animation: _controller,
         builder: (context, child) {
           return Positioned( // using magic constants
-            left: widget.centerOffset.dx - _touchAnimation.value,
-            top: widget.centerOffset.dy - _touchAnimation.value,
-            child: Transform(
-              transform: Matrix4.rotationZ(0.3),
-              alignment: Alignment.center,
-              child: Image(
-                width: widget.imageSize / 1.5,
-                image: AssetImage("assets/images/touch_hand.png")
-              ),
+            top: widget.centerOffset.dy - widget.imageSize / 2,
+            left: widget.centerOffset.dx - widget.imageSize / 2.5 + 10,
+            width: widget.imageSize / 1.5,
+            height: widget.imageSize,
+            child: ClipRect(
+              child: Transform.rotate(
+                angle: 0,
+                //alignment: Alignment.center,
+                child: Transform.translate(
+                  offset: Offset(_touchAnimation.value, _touchAnimation.value),
+                  child: Image(
+                    image: AssetImage("assets/images/touch-hand.png"),
+                  )
+                )
+              )
             )
           );
         }
     );
-  }
-}
-
-class _DrawCenteredCircle extends CustomPainter {
-
-  final Offset centerOffset;
-  final double radius;
-  final Color color;
-
-  _DrawCenteredCircle({this.radius, this.color, this.centerOffset});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint brush = new Paint()
-      ..color = color
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 30;
-    canvas.drawCircle(centerOffset, radius, brush);
-  }
-
-  @override
-  bool shouldRepaint(_DrawCenteredCircle oldDelegate) {
-    return oldDelegate.radius != radius || oldDelegate.color != color;
   }
 }
