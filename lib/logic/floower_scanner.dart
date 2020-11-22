@@ -68,7 +68,6 @@ class FloowerScanner extends ChangeNotifier {
   }
 
   void _onScannerState(BleScannerState state) {
-    print("scanner state");
     if (_state == FloowerScannerState.scanning) {
       _discoveredDevices = state.discoveredDevices;
       if (state.timeOuted == true) {

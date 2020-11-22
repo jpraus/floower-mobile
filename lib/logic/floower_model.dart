@@ -84,11 +84,11 @@ class FloowerModel extends ChangeNotifier {
   void mock() {
     _paired = true;
     _colorsScheme = List.of(FloowerConnector.DEFAULT_SCHEME);
-    _name = "Floower Mockup";
+    _name = "Floower Demo";
     _touchTreshold = 45;
     _batteryLevel = 75;
     _serialNumber = 0;
-    _modelName = "Mockup";
+    _modelName = "Demo";
     _firmwareVersion = 0;
     _hardwareRevision = 0;
 

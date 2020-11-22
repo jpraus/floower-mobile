@@ -41,7 +41,6 @@ class BleScanner {
   }
 
   void _pushState({bool timeOuted = false}) {
-    print("_pushState");
     _stateStreamController.add(
       BleScannerState(
         discoveredDevices: _devices,

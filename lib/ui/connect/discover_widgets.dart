@@ -110,10 +110,12 @@ class BleConnectInstructions extends StatelessWidget {
 
   BleConnectInstructions({
     @required this.onStartScan,
+    @required this.onDemo,
     Key key
   }) : super(key: key);
 
   final void Function() onStartScan;
+  final void Function() onDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +138,10 @@ class BleConnectInstructions extends StatelessWidget {
               child: Text("It's flashing now"),
               onPressed: onStartScan
           ),
-          /*CupertinoButton(
-              child: Text("Cancel"),
-              onPressed: onCancel
-          )*/
+          CupertinoButton(
+              child: Text("Let me just play"),
+              onPressed: onDemo
+          )
         ],
       ),
       animationBuilder: (centerOffset, imageSize) => _TouchHandAnimation(

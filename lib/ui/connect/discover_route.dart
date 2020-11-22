@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/connect/connect_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -127,6 +128,11 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
     });
   }
 
+  void _onDemo(context) {
+    Provider.of<FloowerModel>(context, listen: false).mock();
+    Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
+  }
+
   void _onFloowerConnectorChange() {
     print("_onFloowerConnectorChange ${widget.floowerConnector.connectionState}");
     setState(() {});
@@ -135,6 +141,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
   Future<bool> _disconnect() async {
     await widget.floowerConnector.disconnect();
     setState(() => _device = null);
+    return true;
   }
 
   void _onReconnect(BuildContext context) {
@@ -200,7 +207,8 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
     }
     else {
       return BleConnectInstructions(
-          onStartScan: _startScanning
+          onStartScan: _startScanning,
+          onDemo: () => _onDemo(context),
       );
     }
   }
