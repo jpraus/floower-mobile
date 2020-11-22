@@ -8,7 +8,6 @@ import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
-import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
 import 'package:Floower/ui/home_route.dart';
 
@@ -47,7 +46,6 @@ void main() {
         routes: {
           HomeRoute.ROUTE_NAME: (context) => HomeRoute(),
           DiscoverRoute.ROUTE_NAME: (context) => DiscoverRoute(),
-          ConnectRoute.ROUTE_NAME: (context) => ConnectRoute(),
           SettingsRoute.ROUTE_NAME: (context) => SettingsRoute()
         },
       ),
