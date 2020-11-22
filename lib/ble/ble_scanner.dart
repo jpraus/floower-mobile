@@ -1,15 +1,14 @@
 import 'dart:async';
 
+import 'package:Floower/ble/ble_provider.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:meta/meta.dart';
 
 class BleScanner {
-  // TODO: move somewhere
-  Uuid floowerService = Uuid.parse('28e17913-66c1-475f-a76e-86b5242f4cec'); // Floower UUID
 
-  BleScanner(this._ble);
+  BleScanner(this._bleProvider);
 
-  final FlutterReactiveBle _ble;
+  final BleProvider _bleProvider;
   final StreamController<BleScannerState> _stateStreamController = StreamController();
 
   Timer _timeoutTimer;
@@ -21,7 +20,7 @@ class BleScanner {
   void startScan({List<Uuid> serviceIds, Duration timeout}) {
     _devices.clear();
     _subscription?.cancel();
-    _subscription = _ble.scanForDevices(withServices: serviceIds).listen((device) {
+    _subscription = _bleProvider.ble.scanForDevices(withServices: serviceIds).listen((device) {
       if (device.name != null && device.name != "") {
         final knownDeviceIndex = _devices.indexWhere((d) => d.id == device.id);
         if (knownDeviceIndex >= 0) {
@@ -42,6 +41,7 @@ class BleScanner {
   }
 
   void _pushState({bool timeOuted = false}) {
+    print("_pushState");
     _stateStreamController.add(
       BleScannerState(
         discoveredDevices: _devices,

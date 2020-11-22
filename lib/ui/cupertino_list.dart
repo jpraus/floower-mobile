@@ -12,7 +12,7 @@ class CupertinoList extends StatelessWidget {
 
   const CupertinoList({
     Key key,
-    @required this.children = const <Widget>[],
+    this.children = const <Widget>[],
     this.heading,
     this.margin,
     this.hint
@@ -87,21 +87,21 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
   Color _color;
 
   void _onTapDown(TapDownDetails tapDownDetails) {
-    setState(() => _color = CupertinoTheme.of(context).barBackgroundColor);
+    setState(() => _color = CupertinoTheme.of(context).scaffoldBackgroundColor);
   }
 
   void _onTapUp(TapUpDetails tapUpDetails) {
-    setState(() => _color = CupertinoTheme.of(context).scaffoldBackgroundColor);
+    setState(() => _color = CupertinoTheme.of(context).barBackgroundColor);
   }
 
   void _onTapCancel() {
-    setState(() => _color = CupertinoTheme.of(context).scaffoldBackgroundColor);
+    setState(() => _color = CupertinoTheme.of(context).barBackgroundColor);
   }
 
   @override
   Widget build(BuildContext context) {
     if (_color == null) {
-      _color = CupertinoTheme.of(context).scaffoldBackgroundColor;
+      _color = CupertinoTheme.of(context).barBackgroundColor;
     }
 
     return GestureDetector(
@@ -111,7 +111,7 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
       onTap: widget.onTap,
       child: AnimatedContainer(
         decoration: BoxDecoration(
-          color: _color
+          color: _color,
         ),
         duration: Duration(milliseconds: 50),
         child: Padding(

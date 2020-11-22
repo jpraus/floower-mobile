@@ -4,6 +4,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/connect/discover_route.dart';
@@ -20,7 +21,8 @@ void main() {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final ble = FlutterReactiveBle();
-  final floowerConnector = FloowerConnector(ble);
+  final bleProvider = BleProvider(ble);
+  final floowerConnector = FloowerConnector(bleProvider);
   final floowerModel = FloowerModel(floowerConnector);
   //floowerModel.mock();
   ble.logLevel = LogLevel.verbose;
@@ -28,6 +30,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<BleProvider>.value(value: bleProvider),
         ChangeNotifierProvider<FloowerModel>.value(value: floowerModel),
         ChangeNotifierProvider<FloowerConnector>.value(value: floowerConnector),
         Provider.value(value: ble)

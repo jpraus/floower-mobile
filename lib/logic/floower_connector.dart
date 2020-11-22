@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Floower/logic/floower_model.dart';
+import 'package:Floower/ble/ble_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -56,18 +56,25 @@ class FloowerConnector extends ChangeNotifier {
   final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
   final Uuid FLOOWER_TOUCH_TRESHOLD_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // touch treshold 1 byte
 
-  final FlutterReactiveBle _ble;
+  final BleProvider _bleProvider;
 
   FloowerConnectionState _connectionState = FloowerConnectionState.disconnected;
+  String _connectionFailureMessage;
+  bool _awaitConnectingStart;
+  Color _pairingColor;
 
   DiscoveredDevice _device;
   StreamSubscription<ConnectionStateUpdate> _deviceConnection;
   StreamSubscription<CharacteristicValue> _characteristicValuesSubscription;
 
-  FloowerConnector(this._ble);
+  FloowerConnector(this._bleProvider);
 
   FloowerConnectionState get connectionState {
     return _connectionState;
+  }
+
+  String get connectionFailureMessage {
+    return _connectionFailureMessage;
   }
 
   DiscoveredDevice get device {
@@ -148,9 +155,9 @@ class FloowerConnector extends ChangeNotifier {
     @required List<int> value,
     bool allowPairing = false
   }) {
-    assert(connectionState == FloowerConnectionState.connected || (allowPairing && connectionState == FloowerConnectionState.pairing));
+    assert(connectionState == FloowerConnectionState.paired || (allowPairing && (connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing)));
 
-    return _ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+    return _bleProvider.ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
       deviceId: device.id,
       serviceId: serviceId,
       characteristicId: characteristicId,
@@ -269,7 +276,7 @@ class FloowerConnector extends ChangeNotifier {
           throw ValueException("RGB color values out of range");
         }
       }
-      print("Got colors scheme " + value.toString());
+      print("Got colors scheme ${value.toString()}");
       int count = (value.length / 3).floor();
       List<Color> colors = [];
       for (int c = 0; c < count; c++) {
@@ -285,9 +292,9 @@ class FloowerConnector extends ChangeNotifier {
     @required Uuid characteristicId,
     bool allowPairing = false
   }) {
-    assert(connectionState == FloowerConnectionState.connected || (allowPairing && connectionState == FloowerConnectionState.pairing));
+    assert(connectionState == FloowerConnectionState.paired || (allowPairing && (connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing)));
 
-    return _ble.readCharacteristic(QualifiedCharacteristic(
+    return _bleProvider.ble.readCharacteristic(QualifiedCharacteristic(
         deviceId: device.id,
         serviceId: serviceId,
         characteristicId: characteristicId
@@ -302,10 +309,10 @@ class FloowerConnector extends ChangeNotifier {
   }
 
   Stream<int> subscribeBatteryLevel() {
-    assert(connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing);
+    assert(connectionState == FloowerConnectionState.paired || connectionState == FloowerConnectionState.pairing);
 
     // TODO: handle errors
-    return _ble.subscribeToCharacteristic(QualifiedCharacteristic(
+    return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
       deviceId: _device.id,
       serviceId: BATTERY_UUID,
       characteristicId: BATTERY_LEVEL_UUID,
@@ -325,13 +332,16 @@ class FloowerConnector extends ChangeNotifier {
     });
   }
 
-  Future<void> connect(DiscoveredDevice device) async {
+  Future<void> connect(DiscoveredDevice device, Color pairingColor) async {
+    _awaitConnectingStart = true;
+    _connectionState = FloowerConnectionState.connecting;
+
     await _deviceConnection?.cancel();
-    _deviceConnection = _ble
+    _deviceConnection = _bleProvider.ble
       .connectToDevice(id: device.id, connectionTimeout: Duration(seconds: 30))
       .listen(_onConnectionChanged);
 
-    // TODO: verify device is Floower
+    _pairingColor = pairingColor;
     _device = device;
     notifyListeners();
   }
@@ -353,62 +363,66 @@ class FloowerConnector extends ChangeNotifier {
     }
   }
 
-  void pair() {
-    if (_connectionState == FloowerConnectionState.pairing) {
-      _connectionState = FloowerConnectionState.connected;
+  void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
+    print("_onConnectionChanged ${stateUpdate.connectionState} $_awaitConnectingStart");
+    if (_awaitConnectingStart && stateUpdate.connectionState == DeviceConnectionState.connecting) {
+      _awaitConnectingStart = false;
+    }
+    if (!_awaitConnectingStart) { // prevent updates while waiting for connecting to start
+      _awaitConnectingStart = false;
+      switch (stateUpdate.connectionState) {
+        case DeviceConnectionState.connected:
+          _connectionState = FloowerConnectionState.connected;
+          _pair();
+          break;
+
+        case DeviceConnectionState.connecting:
+          _connectionState = FloowerConnectionState.connecting;
+          break;
+
+        case DeviceConnectionState.disconnecting:
+          _connectionState = FloowerConnectionState.disconnecting;
+          break;
+
+        case DeviceConnectionState.disconnected:
+          _connectionState = FloowerConnectionState.disconnected;
+          break;
+      }
+
       notifyListeners();
     }
+    // TODO: hande connection errors?
   }
 
-  void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
-    switch (stateUpdate.connectionState) {
-      case DeviceConnectionState.connected:
-        _connectionState = FloowerConnectionState.pairing;
-        break;
+  Future<void> _pair() async {
+    assert(connectionState == FloowerConnectionState.connected);
+    print("Pairing device");
 
-      case DeviceConnectionState.connecting:
-        _connectionState = FloowerConnectionState.connecting;
-        break;
+    Duration transitionDuration = const Duration(milliseconds: 500);
 
-      case DeviceConnectionState.disconnecting:
-        _connectionState = FloowerConnectionState.disconnecting;
-        break;
+    // try to send pairing command to change color and open a bit
+    WriteResult result = await writeState(openLevel: 20, color: _pairingColor, duration: transitionDuration);
+    if (!result.success) {
+      _connectionFailureMessage = result.errorMessage;
+      disconnect();
+    }
+    else {
+      // if success close again
+      await new Future.delayed(transitionDuration);
+      await writeState(openLevel: 0, color: _pairingColor, duration: transitionDuration);
 
-      case DeviceConnectionState.disconnected:
-        _connectionState = FloowerConnectionState.disconnected;
-        break;
+      _connectionState = FloowerConnectionState.pairing;
+      notifyListeners();
     }
 
-    notifyListeners();
+    print("Paired to device");
   }
 
-  void _onDeviceConnected(device) async {
-    // TODO: verify device is Floower
-    await _characteristicValuesSubscription?.cancel();
-    _characteristicValuesSubscription = _ble.characteristicValueStream
-        .listen(_onCharacteristicValue);
-
-    _connectionState = FloowerConnectionState.pairing;
-    notifyListeners();
-
-    //await sendColor(Colors.yellowAccent);
-
-    /*_ble.subscribeToCharacteristic(QualifiedCharacteristic(
-      deviceId: _device.id,
-      serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_COLOR_READ_UUID,
-    ));*/
-
-    //await readColor();
-
-    //_connectionState = FloowerConnectionState.connected;
-    //notifyListeners();
-
-    print("Connected to device");
-  }
-
-  void _onCharacteristicValue(CharacteristicValue characteristicValue) {
-    print("Received characteristic value: " + characteristicValue.toString());
+  void pair() {
+    if (_connectionState == FloowerConnectionState.pairing) {
+      _connectionState = FloowerConnectionState.paired;
+      notifyListeners();
+    }
   }
 }
 
@@ -417,11 +431,14 @@ enum FloowerConnectionState {
   /// Currently establishing a connection.
   connecting,
 
-  /// Checking if device has Floower API
+  /// Connected to device, API not verified, need to pair
+  connected,
+
+  /// Floower API check waiting for visual verification.
   pairing,
 
-  /// Connection is established.
-  connected,
+  /// Connection is established and verified.
+  paired,
 
   /// Terminating the connection.
   disconnecting,

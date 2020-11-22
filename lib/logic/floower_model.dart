@@ -8,7 +8,7 @@ import 'package:tinycolor/tinycolor.dart';
 class FloowerModel extends ChangeNotifier {
 
   final FloowerConnector _floowerConnector;
-  bool _connected = false;
+  bool _paired = false;
 
   Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
   Debouncer _touchTresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
@@ -82,7 +82,7 @@ class FloowerModel extends ChangeNotifier {
   }
   
   void mock() {
-    _connected = true;
+    _paired = true;
     _colorsScheme = List.of(FloowerConnector.DEFAULT_SCHEME);
     _name = "Floower Mockup";
     _touchTreshold = 45;
@@ -96,7 +96,7 @@ class FloowerModel extends ChangeNotifier {
   }
 
   bool get connected {
-    return _connected;
+    return _paired;
   }
 
   void openPetals() {
@@ -124,7 +124,7 @@ class FloowerModel extends ChangeNotifier {
   }
 
   Future<List<FloowerColor>> getColorsScheme() async {
-    if (_connected) {
+    if (_paired) {
       if (_colorsScheme == null) {
         _colorsScheme = (await _floowerConnector.readColorsScheme())
             .map((color) => FloowerColor.fromHwColor(color))
@@ -136,10 +136,10 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void _onFloowerConnectorChange() {
-    bool connected = _floowerConnector.connectionState == FloowerConnectionState.connected;
-    if (connected != _connected) {
-      _connected = connected;
-      if (connected) {
+    bool paired = _floowerConnector.connectionState == FloowerConnectionState.paired;
+    if (paired != _paired) {
+      _paired = paired;
+      if (paired) {
         _onFloowerConnected();
       }
       else {
