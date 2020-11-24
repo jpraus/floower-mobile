@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 
 import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_scanner.dart';
-import 'package:Floower/logic/floower_connector.dart';
+import 'package:Floower/logic/floower_connector_ble.dart';
+import 'package:Floower/logic/floower_connector_demo.dart';
+import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/ble_enabler.dart';
 import 'package:Floower/ui/connect/screens/instructions.dart';
@@ -22,7 +24,7 @@ class ConnectRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     BleProvider bleProvider = Provider.of<BleProvider>(context);
-    FloowerConnector floowerConnector = Provider.of<FloowerConnector>(context);
+    FloowerConnectorBle floowerConnector = Provider.of<FloowerConnectorBle>(context);
 
     return CupertinoPageScaffold(
       //backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
@@ -32,7 +34,7 @@ class ConnectRoute extends StatelessWidget {
       child: SafeArea(
         child: BleEnabler(
           bleProvider: bleProvider,
-          readyChild: new _DiscoverScreen(
+          readyChild: new _ConnectMainScreen(
             bleProvider: bleProvider,
             floowerConnector: floowerConnector
           ),
@@ -42,8 +44,8 @@ class ConnectRoute extends StatelessWidget {
   }
 }
 
-class _DiscoverScreen extends StatefulWidget {
-  const _DiscoverScreen({
+class _ConnectMainScreen extends StatefulWidget {
+  const _ConnectMainScreen({
     @required this.bleProvider,
     @required this.floowerConnector,
     Key key
@@ -51,20 +53,19 @@ class _DiscoverScreen extends StatefulWidget {
         super(key: key);
 
   final BleProvider bleProvider;
-  final FloowerConnector floowerConnector;
+  final FloowerConnectorBle floowerConnector;
 
   @override
-  _DiscoverScreenState createState() {
-    return _DiscoverScreenState();
+  _ConnectMainScreenState createState() {
+    return _ConnectMainScreenState();
   }
 }
 
-class _DiscoverScreenState extends State<_DiscoverScreen> {
+class _ConnectMainScreenState extends State<_ConnectMainScreen> {
 
   FloowerScanner _floowerScanner;
 
   bool _skipInstructions = false;
-  String _failedMessage;
   DiscoveredDevice _device;
 
   @override
@@ -122,7 +123,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
 
   Future<void> _connectToDevice(DiscoveredDevice device) async {
     await _stopScanning();
-    widget.floowerConnector.connect(device, FloowerConnector.COLOR_YELLOW.hwColor);
+    widget.floowerConnector.connect(device, FloowerColor.COLOR_YELLOW.hwColor);
     setState(() {
       _device = device;
       _skipInstructions = true;
@@ -130,7 +131,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
   }
 
   void _onDemo(context) {
-    Provider.of<FloowerModel>(context, listen: false).mock();
+    Provider.of<FloowerModel>(context, listen: false).connect(FloowerConnectorDemo());
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
 
@@ -151,6 +152,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
 
   void _onPair(BuildContext context) async {
     await widget.floowerConnector.writeState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500));
+    Provider.of<FloowerModel>(context, listen: false).connect(widget.floowerConnector);
     widget.floowerConnector.pair();
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
@@ -173,14 +175,14 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
           screen = FloowerConnected(
               onCancel: _disconnect,
               onPair: () => _onPair(context),
-              color: FloowerConnector.COLOR_YELLOW.displayColor
+              color: FloowerColor.COLOR_YELLOW.displayColor
           );
           break;
 
         case FloowerConnectionState.disconnecting:
         case FloowerConnectionState.disconnected:
           screen = FloowerConnectFailed(
-              message: _failedMessage,
+              message: widget.floowerConnector.connectionFailureMessage,
               onCancel: _disconnect,
               onReconnect: () => _onReconnect(context)
           );

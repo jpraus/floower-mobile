@@ -39,8 +39,7 @@ class FloowerConnecting extends StatelessWidget {
             endOpacity: 0,
             repeat: true,
             color: Colors.blue,
-            centerOffset: centerOffset,
-            key: UniqueKey()
+            centerOffset: centerOffset
         );
       },
     );
@@ -97,8 +96,7 @@ class FloowerConnected extends StatelessWidget {
                 endRadius: imageSize / 2,
                 endOpacity: 1,
                 color: color,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             ),
             CircleAnimation(
                 duration: Duration(milliseconds: 1000),
@@ -107,8 +105,7 @@ class FloowerConnected extends StatelessWidget {
                 startOpacity: 0.4,
                 endOpacity: 0,
                 color: color,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             ),
             CircleAnimation(
                 duration: Duration(milliseconds: 1000),
@@ -117,8 +114,7 @@ class FloowerConnected extends StatelessWidget {
                 startOpacity: 0.5,
                 endOpacity: 0,
                 color: color,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             )
           ],
         );
@@ -177,8 +173,7 @@ class FloowerConnectFailed extends StatelessWidget {
                 endRadius: data.size.height,
                 endOpacity: 0,
                 color: Colors.red,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             ),
             CircleAnimation(
                 duration: Duration(milliseconds: 1000),
@@ -187,8 +182,7 @@ class FloowerConnectFailed extends StatelessWidget {
                 startOpacity: 0.4,
                 endOpacity: 0,
                 color: Colors.red,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             ),
             CircleAnimation(
                 duration: Duration(milliseconds: 1000),
@@ -197,8 +191,7 @@ class FloowerConnectFailed extends StatelessWidget {
                 startOpacity: 0.5,
                 endOpacity: 0,
                 color: Colors.red,
-                centerOffset: centerOffset,
-                key: UniqueKey()
+                centerOffset: centerOffset
             )
           ],
         );

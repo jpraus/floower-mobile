@@ -8,6 +8,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:dashed_container/dashed_container.dart';
 
+import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:tinycolor/tinycolor.dart';
@@ -286,7 +287,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
     Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
     List<Widget> defaultColors = [];
 
-    for (FloowerColor color in FloowerConnector.DEFAULT_SCHEME) {
+    for (FloowerColor color in FloowerColor.DEFAULT_SCHEME) {
       defaultColors.add(GestureDetector(
         onTap: () => _onChangeColor(color.displayHSVColor),
         child: Container(

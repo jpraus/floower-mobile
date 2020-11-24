@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/logic/floower_connector.dart';
+import 'package:Floower/logic/floower_connector_ble.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:Floower/ui/settings/settings_name_dialog.dart';
@@ -34,7 +34,8 @@ class _SettingsScreen extends StatelessWidget {
   }) : super(key: key);
 
   void _onDisconnect(BuildContext context) async {
-    await Provider.of<FloowerConnector>(context, listen: false).disconnect();
+    await Provider.of<FloowerConnectorBle>(context, listen: false).disconnect();
+    await Provider.of<FloowerConnectorBle>(context, listen: false).disconnect();
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
 
@@ -60,7 +61,10 @@ class _SettingsScreen extends StatelessWidget {
           title: Text("Connected"),
           trailing: GestureDetector(
             child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
-            onTap: () => _onDisconnect(context),
+            onTap: () {
+              floowerModel.disconnect();
+              Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
+            },
           ),
         ),
         CupertinoListItem(
@@ -155,7 +159,7 @@ class _TouchSensitivitySliderState extends State<TouchSensitivitySlider> {
 
   @override
   void initState() {
-    _value = widget.floowerModel.touchTreshold?.toDouble();
+    _value = widget.floowerModel.touchThreshold?.toDouble();
     super.initState();
   }
 
@@ -163,7 +167,7 @@ class _TouchSensitivitySliderState extends State<TouchSensitivitySlider> {
     setState(() {
       _value = value;
     });
-    widget.floowerModel.setTouchTreshold(value.toInt());
+    widget.floowerModel.setTouchThreshold(value.toInt());
   }
 
   @override

@@ -45,8 +45,7 @@ class BleConnectInstructions extends StatelessWidget {
       animationBuilder: (centerOffset, imageSize) => _TouchHandAnimation(
           centerOffset: centerOffset,
           imageSize: imageSize,
-          duration: Duration(seconds: 2),
-          key: new GlobalKey()
+          duration: Duration(seconds: 2)
       ),
     );
   }

@@ -16,10 +16,7 @@ class FloowerScanner extends ChangeNotifier {
 
   List<DiscoveredDevice> _discoveredDevices = [];
   FloowerScannerState _state = FloowerScannerState.initial;
-  String _failedMessage;
-
   Timer _tryConnectTimer;
-  DiscoveredDevice _device;
 
   FloowerScanner({
     @required this.bleProvider,

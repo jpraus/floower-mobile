@@ -39,8 +39,7 @@ class BleScanning extends StatelessWidget {
             repeat: true,
             boomerang: true,
             color: Colors.blue,
-            centerOffset: centerOffset,
-            key: new GlobalKey()
+            centerOffset: centerOffset
         );
       },
     );
