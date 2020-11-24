@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/ui/connect/discover_route.dart';
+import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
 
 class HomeRoute extends StatelessWidget {
@@ -40,7 +40,7 @@ class _Floower extends StatelessWidget {
   _Floower({ Key key }) : super(key: key);
 
   void _onConnectPressed(BuildContext context) {
-    Navigator.pushNamed(context, DiscoverRoute.ROUTE_NAME);
+    Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
   }
 
   void _onColorPickerChanged(BuildContext context, FloowerColor color) {

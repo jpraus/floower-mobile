@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/ui/connect/connect_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -12,11 +11,13 @@ import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_scanner.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/home_route.dart';
-import 'package:Floower/ui/connect/discover_widgets.dart';
-import 'package:Floower/ui/connect/ble_enabler.dart';
+import 'package:Floower/ui/ble_enabler.dart';
+import 'package:Floower/ui/connect/screens/instructions.dart';
+import 'package:Floower/ui/connect/screens/scanning.dart';
+import 'package:Floower/ui/connect/screens/connecting.dart';
 
-class DiscoverRoute extends StatelessWidget {
-  static const ROUTE_NAME = '/discover';
+class ConnectRoute extends StatelessWidget {
+  static const ROUTE_NAME = '/connect';
 
   @override
   Widget build(BuildContext context) {

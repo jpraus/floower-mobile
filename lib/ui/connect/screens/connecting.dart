@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:meta/meta.dart';
 
-import 'package:Floower/ui/connect/connect_layout.dart';
+import 'connect_layout.dart';
 
 class FloowerConnecting extends StatelessWidget {
 
