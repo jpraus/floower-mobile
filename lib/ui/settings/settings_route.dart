@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/logic/floower_connector_ble.dart';
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:Floower/ui/settings/settings_name_dialog.dart';

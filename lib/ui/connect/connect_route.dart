@@ -9,8 +9,7 @@ import 'package:provider/provider.dart';
 
 import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_scanner.dart';
-import 'package:Floower/logic/floower_connector_ble.dart';
-import 'package:Floower/logic/floower_connector_demo.dart';
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/ble_enabler.dart';

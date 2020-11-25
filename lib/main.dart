@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/logic/floower_connector_ble.dart';
+import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
 import 'package:Floower/ui/home_route.dart';
