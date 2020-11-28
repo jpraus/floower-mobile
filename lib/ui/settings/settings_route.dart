@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
+import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/home_route.dart';
@@ -34,8 +35,11 @@ class _SettingsScreen extends StatelessWidget {
   }) : super(key: key);
 
   void _onDisconnect(BuildContext context) async {
-    await Provider.of<FloowerConnectorBle>(context, listen: false).disconnect();
-    await Provider.of<FloowerConnectorBle>(context, listen: false).disconnect();
+    PersistentStorage persistentStorage = Provider.of<PersistentStorage>(context, listen: false);
+    FloowerConnectorBle floowerConnectorBle = Provider.of<FloowerConnectorBle>(context, listen: false);
+
+    await floowerConnectorBle.disconnect();
+    await persistentStorage.removePairedDevice();
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
 
@@ -52,9 +56,6 @@ class _SettingsScreen extends StatelessWidget {
     FloowerModel floowerModel = Provider.of<FloowerModel>(context);
     List<Widget> column = [];
 
-    print(floowerModel.modelName);
-    print(floowerModel.name);
-
     // connected devices
     column.add(const SizedBox(height: 35));
     column.add(CupertinoList(
@@ -63,10 +64,7 @@ class _SettingsScreen extends StatelessWidget {
           title: Text("Connected"),
           trailing: GestureDetector(
             child: Text("DISCONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),
-            onTap: () {
-              floowerModel.disconnect();
-              Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
-            },
+            onTap: () => _onDisconnect(context),
           ),
         ),
         CupertinoListItem(

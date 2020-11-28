@@ -50,6 +50,9 @@ class FloowerColor {
 
   static FloowerColor fromHwColor(Color hwColor) {
     TinyColor color = TinyColor(hwColor);
+    if (color.getBrightness() == 0) {
+      return black;
+    }
     return FloowerColor._(color.brighten(INTENSITY_SHIFT)); // display intensity up by 30%
   }
 

@@ -10,6 +10,8 @@ class FloowerModel extends ChangeNotifier {
 
   FloowerConnector _floowerConnector;
   bool _paired = false;
+  bool _detachAfterDisconnect = false;
+  StreamSubscription _batteryLevelSubscription;
 
   Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
   Debouncer _touchThresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
@@ -120,50 +122,40 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void connect(FloowerConnector floowerConnector) {
-    _floowerConnector?.removeListener(_onFloowerConnectorChange);
+    _floowerConnector?.removeListener(_checkFloowerConnectorState);
     _floowerConnector = floowerConnector;
-    if (_floowerConnector != null) {
-      _floowerConnector?.addListener(_onFloowerConnectorChange);
-    }
-    this._onFloowerConnectorChange();
+    _floowerConnector.addListener(_checkFloowerConnectorState);
+    this._checkFloowerConnectorState();
   }
 
   void disconnect() {
     if (_floowerConnector != null) {
+      _floowerConnector.removeListener(_checkFloowerConnectorState);
       _floowerConnector.disconnect();
-      _floowerConnector.removeListener(_onFloowerConnectorChange);
       _floowerConnector = null;
-      this._onFloowerConnectorChange();
-    }
-  }
-
-  void _onFloowerConnectorChange() {
-    bool paired = _floowerConnector?.state == FloowerConnectionState.paired;
-    if (paired != _paired) {
-      _paired = paired;
-      if (paired) {
-        _onFloowerConnected();
-      }
-      else {
-        _onFloowerDisconnected();
-      }
+      _paired = false;
+      _batteryLevelSubscription?.cancel();
       notifyListeners();
     }
   }
 
-  void _onFloowerConnected() async {
-    // battery level
-    // TODO: this is getting read twice .. unsusbcribe somehow
-    _floowerConnector.subscribeBatteryLevel().listen((batteryLevel) {
-      if (_batteryLevel != batteryLevel) {
-        print("Updating battery level: $batteryLevel%");
-        _batteryLevel = batteryLevel;
-        notifyListeners();
+  void _checkFloowerConnectorState() {
+    bool paired = _floowerConnector?.state == FloowerConnectionState.paired;
+    if (paired != _paired) {
+      _paired = paired;
+      if (paired) {
+        _onFloowerPaired();
       }
-    });
+    }
+    notifyListeners();
+  }
 
+  void _onFloowerPaired() async {
     print("Loading Floower Information");
 
+    FloowerState state = await _floowerConnector.readState();
+    _color = FloowerColor.fromHwColor(state.color);
+    _petalsOpenLevel = state.petalsOpenLevel;
     _name = await _floowerConnector.readName();
     _touchThreshold = await _floowerConnector.readTouchThreshold();
     _serialNumber = await _floowerConnector.readSerialNumber();
@@ -171,14 +163,19 @@ class FloowerModel extends ChangeNotifier {
     _firmwareVersion = await _floowerConnector.readFirmwareVersion();
     _hardwareRevision = await _floowerConnector.readHardwareRevision();
 
+    // battery level
+    _batteryLevelSubscription?.cancel();
+    _batteryLevelSubscription = _floowerConnector.subscribeBatteryLevel().listen(_onBatteryLevel);
+
     notifyListeners();
   }
 
-  void _onFloowerDisconnected() {
-    _color = FloowerColor.black;
-    _petalsOpenLevel = 0;
-    _colorsScheme = null;
-    disconnect();
+  void _onBatteryLevel(batteryLevel) {
+    if (_paired && _batteryLevel != batteryLevel) {
+      print("Updating battery level: $batteryLevel%");
+      _batteryLevel = batteryLevel;
+      notifyListeners();
+    }
   }
 }
 

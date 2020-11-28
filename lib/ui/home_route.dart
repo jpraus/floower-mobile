@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -303,14 +304,12 @@ class _AutoConnect extends StatefulWidget {
   final BleProvider bleProvider;
   final FloowerConnectorBle floowerConnectorBle;
   final FloowerModel floowerModel;
-  final Widget Function(bool connecting) childBuilder;
 
   _AutoConnect({
-    this.persistentStorage,
-    this.bleProvider,
-    this.floowerConnectorBle,
-    this.floowerModel,
-    this.childBuilder,
+    @required this.persistentStorage,
+    @required this.bleProvider,
+    @required this.floowerConnectorBle,
+    @required this.floowerModel,
     Key key
   }) : super(key: key);
 
@@ -321,29 +320,45 @@ class _AutoConnect extends StatefulWidget {
 class _AutoConnectState extends State<_AutoConnect> {
 
   bool _wasReady = false;
-  bool _connecting = false;
+  Timer _connectTimer;
 
   @override
   void initState() {
     widget.bleProvider.addListener(_onBleProviderChange);
-    //widget.floowerConnectorBle.addListener(_onFloowerConnectorChange);
+    widget.floowerModel.addListener(_onFloowerModelChange);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    widget.bleProvider.removeListener(_onBleProviderChange);
+    widget.floowerModel.removeListener(_onFloowerModelChange);
+    _connectTimer?.cancel();
+    super.dispose();
   }
 
   void _onBleProviderChange() async {
     if (widget.bleProvider.ready && !_wasReady) {
-      print("Ble ready");
       _wasReady = true;
+      _tryConnect();
+    }
+  }
+
+  void _onFloowerModelChange() {
+    setState(() {});
+  }
+
+  void _tryConnect() async {
+    if (widget.floowerModel.disconnected) {
       String deviceId = widget.persistentStorage.pairedDevice;
       if (deviceId != null) {
-        // TODO: not if already connected
-        print("Auto connecting to device $deviceId");
-        setState(() => _connecting = true);
+        print("Attempting connect to device $deviceId");
         await widget.floowerConnectorBle.connect(deviceId);
         widget.floowerModel.connect(widget.floowerConnectorBle);
-        setState(() => _connecting = false);
       }
     }
+    _connectTimer?.cancel();
+    _connectTimer = Timer(Duration(seconds: 5), _tryConnect);
   }
 
   void _onConnectPressed(BuildContext context) {

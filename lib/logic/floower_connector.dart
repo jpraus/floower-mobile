@@ -219,6 +219,7 @@ class FloowerConnectorBle extends FloowerConnector {
         characteristicId: FLOOWER_STATE_UUID,
         allowPairing: true
     ).then((value) {
+      print(value);
       assert(value.length == 4);
       assert(value[0] >= 0 && value[0] <= 100); // open level
       assert(value[1] >= 0 && value[1] <= 255); // R
@@ -410,6 +411,7 @@ class FloowerConnectorBle extends FloowerConnector {
         print("Error disconnecting from a device: $e");
       } finally {
         _deviceId = null;
+        _deviceConnection = null;
         _connectionState = FloowerConnectionState.disconnected;
         notifyListeners();
       }
@@ -417,7 +419,7 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
-    print("_onConnectionChanged ${stateUpdate.connectionState} $_awaitConnectingStart");
+    print("Connection update: ${stateUpdate.connectionState} ($_awaitConnectingStart)");
     if (_awaitConnectingStart && stateUpdate.connectionState == DeviceConnectionState.connecting) {
       _awaitConnectingStart = false;
     }
@@ -444,6 +446,7 @@ class FloowerConnectorBle extends FloowerConnector {
 
         case DeviceConnectionState.disconnected:
           _connectionState = FloowerConnectionState.disconnected;
+          disconnect();
           break;
       }
 
