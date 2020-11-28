@@ -50,8 +50,10 @@ class _SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     FloowerModel floowerModel = Provider.of<FloowerModel>(context);
-    bool deviceConnected = false;
     List<Widget> column = [];
+
+    print(floowerModel.modelName);
+    print(floowerModel.name);
 
     // connected devices
     column.add(const SizedBox(height: 35));

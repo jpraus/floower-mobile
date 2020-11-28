@@ -7,6 +7,15 @@ import 'package:flutter_reactive_ble/src/model/write_characteristic_info.dart';
 import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_color.dart';
 
+enum FloowerConnectionState {
+  connecting, // Currently establishing a connection.
+  connected, // Connected to device, API not verified, need to pair
+  pairing, // Floower API check waiting for visual verification.
+  paired, // Connection is established and verified.
+  disconnecting, // Terminating the connection.
+  disconnected // Device is disconnected.
+}
+
 class FloowerState {
   final int petalsOpenLevel;
   final Color color;
@@ -29,7 +38,7 @@ abstract class FloowerConnector extends ChangeNotifier {
   static const int MAX_NAME_LENGTH = 25;
   static const int MAX_SCHEME_COLORS = 10;
 
-  bool isPaired();
+  FloowerConnectionState get state;
 
   Future<WriteResult> writeState({
     int openLevel,
@@ -96,27 +105,17 @@ class FloowerConnectorBle extends FloowerConnector {
   bool _awaitConnectingStart;
   Color _pairingColor;
 
-  DiscoveredDevice _device;
+  String _deviceId;
   StreamSubscription<ConnectionStateUpdate> _deviceConnection;
   StreamSubscription<CharacteristicValue> _characteristicValuesSubscription;
 
   FloowerConnectorBle(this._bleProvider);
 
-  bool isPaired() {
-    return _connectionState == FloowerConnectionState.paired;
-  }
+  @override
+  FloowerConnectionState get state => _connectionState;
 
-  FloowerConnectionState get connectionState {
-    return _connectionState;
-  }
-
-  String get connectionFailureMessage {
-    return _connectionFailureMessage;
-  }
-
-  DiscoveredDevice get device {
-    return _device;
-  }
+  String get connectionFailureMessage => _connectionFailureMessage;
+  String get deviceId => _deviceId;
 
   @override
   Future<WriteResult> writeState({
@@ -195,10 +194,10 @@ class FloowerConnectorBle extends FloowerConnector {
     @required List<int> value,
     bool allowPairing = false
   }) {
-    assert(connectionState == FloowerConnectionState.paired || (allowPairing && (connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing)));
+    assert(_connectionState == FloowerConnectionState.paired || (allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing)));
 
     return _bleProvider.ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
-      deviceId: device.id,
+      deviceId: _deviceId,
       serviceId: serviceId,
       characteristicId: characteristicId,
     ), value: value).then((value) {
@@ -208,6 +207,7 @@ class FloowerConnectorBle extends FloowerConnector {
       if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
         return WriteResult(success: false, errorMessage: "Not a compatibile device");
       }
+      print("Unhandled write error");
       throw e;
     });
   }
@@ -340,10 +340,10 @@ class FloowerConnectorBle extends FloowerConnector {
     @required Uuid characteristicId,
     bool allowPairing = false
   }) {
-    assert(connectionState == FloowerConnectionState.paired || (allowPairing && (connectionState == FloowerConnectionState.connected || connectionState == FloowerConnectionState.pairing)));
+    assert(_connectionState == FloowerConnectionState.paired || (allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing)));
 
     return _bleProvider.ble.readCharacteristic(QualifiedCharacteristic(
-        deviceId: device.id,
+        deviceId: _deviceId,
         serviceId: serviceId,
         characteristicId: characteristicId
     )).catchError((e) {
@@ -352,17 +352,18 @@ class FloowerConnectorBle extends FloowerConnector {
       // TODO: response
       //print("Unknown characteristics");
       //}
+      print("Unhandled read error");
       throw e;
     });
   }
 
   @override
   Stream<int> subscribeBatteryLevel() {
-    assert(connectionState == FloowerConnectionState.paired || connectionState == FloowerConnectionState.pairing);
+    assert(_connectionState == FloowerConnectionState.paired || _connectionState == FloowerConnectionState.pairing);
 
     // TODO: handle errors
     return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
-      deviceId: _device.id,
+      deviceId: _deviceId,
       serviceId: BATTERY_UUID,
       characteristicId: BATTERY_LEVEL_UUID,
     )).map((bytes) {
@@ -381,17 +382,19 @@ class FloowerConnectorBle extends FloowerConnector {
     });
   }
 
-  Future<void> connect(DiscoveredDevice device, Color pairingColor) async {
+  Future<void> connect(String deviceId, {
+    Color pairingColor
+  }) async {
     _awaitConnectingStart = true;
     _connectionState = FloowerConnectionState.connecting;
 
     await _deviceConnection?.cancel();
     _deviceConnection = _bleProvider.ble
-        .connectToDevice(id: device.id, connectionTimeout: Duration(seconds: 30))
+        .connectToDevice(id: deviceId, connectionTimeout: Duration(seconds: 30))
         .listen(_onConnectionChanged);
 
     _pairingColor = pairingColor;
-    _device = device;
+    _deviceId = deviceId;
     notifyListeners();
   }
 
@@ -406,7 +409,7 @@ class FloowerConnectorBle extends FloowerConnector {
       } on Exception catch (e, _) {
         print("Error disconnecting from a device: $e");
       } finally {
-        _device = null;
+        _deviceId = null;
         _connectionState = FloowerConnectionState.disconnected;
         notifyListeners();
       }
@@ -422,8 +425,13 @@ class FloowerConnectorBle extends FloowerConnector {
       _awaitConnectingStart = false;
       switch (stateUpdate.connectionState) {
         case DeviceConnectionState.connected:
-          _connectionState = FloowerConnectionState.connected;
-          _pair();
+          if (_pairingColor == null) {
+            _connectionState = FloowerConnectionState.paired;
+          }
+          else {
+            _connectionState = FloowerConnectionState.connected;
+            _pair();
+          }
           break;
 
         case DeviceConnectionState.connecting:
@@ -445,7 +453,7 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   Future<void> _pair() async {
-    assert(connectionState == FloowerConnectionState.connected);
+    assert(_connectionState == FloowerConnectionState.connected);
     print("Pairing device");
 
     Duration transitionDuration = const Duration(milliseconds: 500);
@@ -468,33 +476,13 @@ class FloowerConnectorBle extends FloowerConnector {
     print("Paired to device");
   }
 
-  void pair() {
+  void pair() async {
     if (_connectionState == FloowerConnectionState.pairing) {
+      await writeState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500)); // end pairing
       _connectionState = FloowerConnectionState.paired;
       notifyListeners();
     }
   }
-}
-
-/// Connection state
-enum FloowerConnectionState {
-  /// Currently establishing a connection.
-  connecting,
-
-  /// Connected to device, API not verified, need to pair
-  connected,
-
-  /// Floower API check waiting for visual verification.
-  pairing,
-
-  /// Connection is established and verified.
-  paired,
-
-  /// Terminating the connection.
-  disconnecting,
-
-  /// Device is disconnected.
-  disconnected
 }
 
 class ValueException implements Exception {
@@ -521,9 +509,7 @@ class FloowerConnectorDemo extends FloowerConnector {
   int _touchThreshold = 45;
 
   @override
-  bool isPaired() {
-    return _paired;
-  }
+  FloowerConnectionState get state => FloowerConnectionState.paired;
 
   @override
   Future<WriteResult> writeState({

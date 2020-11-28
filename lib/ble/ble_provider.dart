@@ -26,4 +26,8 @@ class BleProvider extends ChangeNotifier {
   BleStatus get status {
     return _bleStatus;
   }
+
+  bool get ready {
+    return _bleStatus == BleStatus.ready;
+  }
 }

@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/logic/floower_model.dart';
+import 'package:Floower/logic/floower_connector.dart';
+import 'package:Floower/ble/ble_provider.dart';
+import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
 
@@ -15,7 +18,10 @@ class HomeRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    BleProvider bleProvider = Provider.of<BleProvider>(context);
+    PersistentStorage persistentStorage = Provider.of<PersistentStorage>(context);
     FloowerModel floowerModel = Provider.of<FloowerModel>(context);
+    FloowerConnectorBle floowerConnectorBle = Provider.of<FloowerConnectorBle>(context);
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -30,7 +36,12 @@ class HomeRoute extends StatelessWidget {
           : Container(width: 0, height: 0)
       ),
       child: SafeArea(
-        child: _Floower(),
+        child: _Floower(
+          persistentStorage: persistentStorage,
+          bleProvider: bleProvider,
+          floowerConnectorBle: floowerConnectorBle,
+          floowerModel: floowerModel,
+        ),
       ),
     );
   }
@@ -38,11 +49,18 @@ class HomeRoute extends StatelessWidget {
 
 class _Floower extends StatelessWidget {
 
-  _Floower({ Key key }) : super(key: key);
+  final BleProvider bleProvider;
+  final PersistentStorage persistentStorage;
+  final FloowerConnectorBle floowerConnectorBle;
+  final FloowerModel floowerModel;
 
-  void _onConnectPressed(BuildContext context) {
-    Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
-  }
+  _Floower({
+    this.bleProvider,
+    this.persistentStorage,
+    this.floowerConnectorBle,
+    this.floowerModel,
+    Key key
+  }) : super(key: key);
 
   void _onColorPickerChanged(BuildContext context, FloowerColor color) {
     Provider.of<FloowerModel>(context, listen: false).setColor(color);
@@ -58,8 +76,6 @@ class _Floower extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     assert(debugCheckHasMediaQuery(context));
-    final MediaQueryData data = MediaQuery.of(context);
-    FloowerModel floowerModel = Provider.of<FloowerModel>(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -93,24 +109,12 @@ class _Floower extends StatelessWidget {
               ),
             ),
             Center(
-              child: !floowerModel.connected ? Container(
-                padding: EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                  color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Not connected"),
-                    SizedBox(height: 18),
-                    CupertinoButton.filled(
-                      child: Text("Connect"),
-                      onPressed: () => _onConnectPressed(context),
-                    ),
-                  ],
-                )
-              ) : null,
+              child: _AutoConnect(
+                persistentStorage: persistentStorage,
+                bleProvider: bleProvider,
+                floowerConnectorBle: floowerConnectorBle,
+                floowerModel: floowerModel
+              ),
             ),
             Positioned(
               left: 14,
@@ -142,7 +146,7 @@ class _Floower extends StatelessWidget {
               child: _BatteryLevelIndicator(),
             ),
             Visibility(
-            visible: !floowerModel.connected,
+              visible: !floowerModel.connected,
               child: Positioned(
                 right: 15,
                 bottom: 15,
@@ -290,5 +294,112 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
         ],
       ),
     );
+  }
+}
+
+class _AutoConnect extends StatefulWidget {
+
+  final PersistentStorage persistentStorage;
+  final BleProvider bleProvider;
+  final FloowerConnectorBle floowerConnectorBle;
+  final FloowerModel floowerModel;
+  final Widget Function(bool connecting) childBuilder;
+
+  _AutoConnect({
+    this.persistentStorage,
+    this.bleProvider,
+    this.floowerConnectorBle,
+    this.floowerModel,
+    this.childBuilder,
+    Key key
+  }) : super(key: key);
+
+  @override
+  _AutoConnectState createState() => _AutoConnectState();
+}
+
+class _AutoConnectState extends State<_AutoConnect> {
+
+  bool _wasReady = false;
+  bool _connecting = false;
+
+  @override
+  void initState() {
+    widget.bleProvider.addListener(_onBleProviderChange);
+    //widget.floowerConnectorBle.addListener(_onFloowerConnectorChange);
+    super.initState();
+  }
+
+  void _onBleProviderChange() async {
+    if (widget.bleProvider.ready && !_wasReady) {
+      print("Ble ready");
+      _wasReady = true;
+      String deviceId = widget.persistentStorage.pairedDevice;
+      if (deviceId != null) {
+        // TODO: not if already connected
+        print("Auto connecting to device $deviceId");
+        setState(() => _connecting = true);
+        await widget.floowerConnectorBle.connect(deviceId);
+        widget.floowerModel.connect(widget.floowerConnectorBle);
+        setState(() => _connecting = false);
+      }
+    }
+  }
+
+  void _onConnectPressed(BuildContext context) {
+    Navigator.pushNamed(context, ConnectRoute.ROUTE_NAME);
+  }
+
+  void _onCancelPressed() {
+    widget.floowerModel.disconnect();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.floowerModel.disconnected) {
+      return Container(
+          padding: EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            color: CupertinoTheme
+                .of(context)
+                .scaffoldBackgroundColor,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Not connected"),
+              SizedBox(height: 18),
+              CupertinoButton.filled(
+                child: Text("Connect"),
+                onPressed: () => _onConnectPressed(context),
+              ),
+            ],
+          )
+      );
+    }
+    else if (widget.floowerModel.connecting) {
+      return Container(
+        padding: EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+        ),
+        child: GestureDetector(
+          onTap: _onCancelPressed,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Connecting ..."),
+              SizedBox(height: 21),
+              CupertinoActivityIndicator(radius: 20),
+            ],
+          )
+        )
+      );
+    }
+    else {
+      return Container();
+    }
   }
 }

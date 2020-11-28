@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/logic/floower_connector.dart';
+import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/ui/connect/connect_route.dart';
 import 'package:Floower/ui/settings/settings_route.dart';
 import 'package:Floower/ui/home_route.dart';
@@ -23,7 +24,9 @@ void main() {
   final bleProvider = BleProvider(ble);
   final floowerConnector = FloowerConnectorBle(bleProvider);
   final floowerModel = FloowerModel();
-  //floowerModel.mock();
+  final persistentStorage = PersistentStorage();
+  //final bleConnectionWatcher = FloowerConnectionWatcher();
+
   ble.logLevel = LogLevel.verbose;
 
   runApp(
@@ -32,7 +35,7 @@ void main() {
         ChangeNotifierProvider<BleProvider>.value(value: bleProvider),
         ChangeNotifierProvider<FloowerModel>.value(value: floowerModel),
         ChangeNotifierProvider<FloowerConnectorBle>.value(value: floowerConnector),
-        Provider.value(value: ble)
+        ChangeNotifierProvider<PersistentStorage>.value(value: persistentStorage)
       ],
       child: CupertinoApp(
         title: 'Floower',

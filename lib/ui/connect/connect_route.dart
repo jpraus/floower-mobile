@@ -11,6 +11,7 @@ import 'package:Floower/ble/ble_provider.dart';
 import 'package:Floower/logic/floower_scanner.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/logic/floower_color.dart';
+import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/ble_enabler.dart';
 import 'package:Floower/ui/connect/screens/instructions.dart';
@@ -122,7 +123,7 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
 
   Future<void> _connectToDevice(DiscoveredDevice device) async {
     await _stopScanning();
-    widget.floowerConnector.connect(device, FloowerColor.COLOR_YELLOW.hwColor);
+    widget.floowerConnector.connect(device.id, pairingColor: FloowerColor.COLOR_YELLOW.hwColor);
     setState(() {
       _device = device;
       _skipInstructions = true;
@@ -135,7 +136,7 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
   }
 
   void _onFloowerConnectorChange() {
-    print("_onFloowerConnectorChange ${widget.floowerConnector.connectionState}");
+    print("_onFloowerConnectorChange ${widget.floowerConnector.state}");
     setState(() {});
   }
 
@@ -150,9 +151,13 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
   }
 
   void _onPair(BuildContext context) async {
-    await widget.floowerConnector.writeState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500));
-    Provider.of<FloowerModel>(context, listen: false).connect(widget.floowerConnector);
-    widget.floowerConnector.pair();
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context, listen: false);
+    PersistentStorage persistentStorage = Provider.of<PersistentStorage>(context, listen: false);
+
+    await widget.floowerConnector.pair();
+    floowerModel.connect(widget.floowerConnector);
+    persistentStorage.pairedDevice = widget.floowerConnector.deviceId;
+
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }
 
@@ -161,7 +166,7 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
     // TODO: connecting screen
     if (_device != null) {
       Widget screen;
-      switch (widget.floowerConnector.connectionState) {
+      switch (widget.floowerConnector.state) {
         case FloowerConnectionState.connecting:
         case FloowerConnectionState.connected:
           screen = FloowerConnecting(

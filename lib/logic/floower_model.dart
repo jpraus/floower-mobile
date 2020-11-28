@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import 'package:Floower/ble/ble_provider.dart';
+import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/logic/floower_color.dart';
 
@@ -18,12 +19,12 @@ class FloowerModel extends ChangeNotifier {
   int _petalsOpenLevel = 0; // TODO read from state
   FloowerColor _color = FloowerColor.black;
   List<FloowerColor> _colorsScheme; // max 10 colos
-  String _name;
+  String _name = "";
   int _touchThreshold;
 
   // read only
   int _serialNumber;
-  String _modelName;
+  String _modelName = "";
   int _firmwareVersion;
   int _hardwareRevision;
   int _batteryLevel = -1; // -1 = unknown
@@ -37,21 +38,10 @@ class FloowerModel extends ChangeNotifier {
   int get hardwareRevision => _hardwareRevision;
   int get batteryLevel => _batteryLevel;
 
-  void connect(FloowerConnector floowerConnector) {
-    _floowerConnector?.removeListener(_onFloowerConnectorChange);
-    _floowerConnector = floowerConnector;
-    _floowerConnector?.addListener(_onFloowerConnectorChange);
-    this._onFloowerConnectorChange();
-  }
-
-  void disconnect() {
-    if (_floowerConnector != null) {
-      _floowerConnector.disconnect();
-      _floowerConnector.removeListener(_onFloowerConnectorChange);
-      _floowerConnector = null;
-      this._onFloowerConnectorChange();
-    }
-  }
+  bool get connected => _paired;
+  bool get connecting => connectionState == FloowerConnectionState.connecting || connectionState == FloowerConnectionState.pairing;
+  bool get disconnected => !connected && !connecting;
+  FloowerConnectionState get connectionState => _floowerConnector != null ? _floowerConnector.state : FloowerConnectionState.disconnected;
 
   void setColor(FloowerColor color) {
     _color = color;
@@ -92,24 +82,6 @@ class FloowerModel extends ChangeNotifier {
       _floowerConnector?.writeTouchThreshold(touchThreshold);
     });
   }
-  
-  void mock() {
-    _paired = true;
-    _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME);
-    _name = "Floower Demo";
-    _touchThreshold = 45;
-    _batteryLevel = 75;
-    _serialNumber = 0;
-    _modelName = "Demo";
-    _firmwareVersion = 0;
-    _hardwareRevision = 0;
-
-    notifyListeners();
-  }
-
-  bool get connected {
-    return _paired;
-  }
 
   void openPetals() {
     _stateDebouncer.debounce(() {
@@ -147,8 +119,26 @@ class FloowerModel extends ChangeNotifier {
     return List.empty();
   }
 
+  void connect(FloowerConnector floowerConnector) {
+    _floowerConnector?.removeListener(_onFloowerConnectorChange);
+    _floowerConnector = floowerConnector;
+    if (_floowerConnector != null) {
+      _floowerConnector?.addListener(_onFloowerConnectorChange);
+    }
+    this._onFloowerConnectorChange();
+  }
+
+  void disconnect() {
+    if (_floowerConnector != null) {
+      _floowerConnector.disconnect();
+      _floowerConnector.removeListener(_onFloowerConnectorChange);
+      _floowerConnector = null;
+      this._onFloowerConnectorChange();
+    }
+  }
+
   void _onFloowerConnectorChange() {
-    bool paired = _floowerConnector?.isPaired() == true;
+    bool paired = _floowerConnector?.state == FloowerConnectionState.paired;
     if (paired != _paired) {
       _paired = paired;
       if (paired) {
@@ -161,7 +151,7 @@ class FloowerModel extends ChangeNotifier {
     }
   }
 
-  void _onFloowerConnected() {
+  void _onFloowerConnected() async {
     // battery level
     // TODO: this is getting read twice .. unsusbcribe somehow
     _floowerConnector.subscribeBatteryLevel().listen((batteryLevel) {
@@ -172,10 +162,8 @@ class FloowerModel extends ChangeNotifier {
       }
     });
 
-    _loadFloowerInformation();
-  }
+    print("Loading Floower Information");
 
-  void _loadFloowerInformation() async {
     _name = await _floowerConnector.readName();
     _touchThreshold = await _floowerConnector.readTouchThreshold();
     _serialNumber = await _floowerConnector.readSerialNumber();
@@ -190,6 +178,7 @@ class FloowerModel extends ChangeNotifier {
     _color = FloowerColor.black;
     _petalsOpenLevel = 0;
     _colorsScheme = null;
+    disconnect();
   }
 }
 
@@ -203,5 +192,42 @@ class Debouncer {
   debounce(VoidCallback action) {
     _timer?.cancel();
     _timer = Timer(duration, action);
+  }
+}
+
+class FloowerConnectionWatcher extends ChangeNotifier {
+
+  final PersistentStorage _persistentStorage;
+  final BleProvider _bleProvider;
+  final FloowerConnectorBle _floowerConnectorBle;
+  final FloowerModel _floowerModel;
+
+  bool _wasReady = false;
+
+  FloowerConnectionWatcher(this._persistentStorage, this._bleProvider, this._floowerConnectorBle, this._floowerModel) {
+    _bleProvider.addListener(_onBleProviderChange);
+    _floowerConnectorBle.addListener(_onFloowerConnectorChange);
+    //_floowerModel.addListener(_onFloowerModelChange);
+  }
+
+  void autoconnect() async {
+    String deviceId = _persistentStorage.pairedDevice;
+    if (deviceId != null && this._bleProvider.ready) {
+      print("Auto connecting to device $deviceId");
+      await _floowerConnectorBle.connect(deviceId);
+      _floowerModel.connect(_floowerConnectorBle);
+    }
+  }
+
+  void _onBleProviderChange() async {
+    print("Ble change");
+    if (this._bleProvider.ready && !_wasReady) {
+      _wasReady = true;
+
+    }
+  }
+
+  void _onFloowerConnectorChange() {
+    // disconnected
   }
 }
