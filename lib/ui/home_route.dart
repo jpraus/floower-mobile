@@ -319,13 +319,18 @@ class _AutoConnect extends StatefulWidget {
 
 class _AutoConnectState extends State<_AutoConnect> {
 
-  bool _wasReady = false;
+  bool _ready = false;
+  bool _connecting = false;
+  bool _connectingFailed = false;
+  bool _connected = false;
   Timer _connectTimer;
 
   @override
   void initState() {
     widget.bleProvider.addListener(_onBleProviderChange);
     widget.floowerModel.addListener(_onFloowerModelChange);
+    _connected = widget.floowerModel.connected;
+    _connecting = widget.floowerModel.connecting;
     super.initState();
   }
 
@@ -338,14 +343,18 @@ class _AutoConnectState extends State<_AutoConnect> {
   }
 
   void _onBleProviderChange() async {
-    if (widget.bleProvider.ready && !_wasReady) {
-      _wasReady = true;
+    if (widget.bleProvider.ready && !_ready) {
+      setState(() => _ready = true);
       _tryConnect();
     }
   }
 
   void _onFloowerModelChange() {
-    setState(() {});
+    setState(() {
+      _connected = widget.floowerModel.connected;
+      _connectingFailed = _connectingFailed || (_connecting && widget.floowerModel.disconnected);
+      _connecting = widget.floowerModel.connecting;
+    });
   }
 
   void _tryConnect() async {
@@ -353,6 +362,7 @@ class _AutoConnectState extends State<_AutoConnect> {
       String deviceId = widget.persistentStorage.pairedDevice;
       if (deviceId != null) {
         print("Attempting connect to device $deviceId");
+        setState(() => _connecting = true);
         await widget.floowerConnectorBle.connect(deviceId);
         widget.floowerModel.connect(widget.floowerConnectorBle);
       }
@@ -371,29 +381,7 @@ class _AutoConnectState extends State<_AutoConnect> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.floowerModel.disconnected) {
-      return Container(
-          padding: EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-            color: CupertinoTheme
-                .of(context)
-                .scaffoldBackgroundColor,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Not connected"),
-              SizedBox(height: 18),
-              CupertinoButton.filled(
-                child: Text("Connect"),
-                onPressed: () => _onConnectPressed(context),
-              ),
-            ],
-          )
-      );
-    }
-    else if (widget.floowerModel.connecting) {
+    if (_connecting && !_connectingFailed) {
       return Container(
         padding: EdgeInsets.all(18),
         decoration: BoxDecoration(
@@ -401,15 +389,37 @@ class _AutoConnectState extends State<_AutoConnect> {
           color: CupertinoTheme.of(context).scaffoldBackgroundColor,
         ),
         child: GestureDetector(
-          onTap: _onCancelPressed,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Connecting ..."),
-              SizedBox(height: 21),
-              CupertinoActivityIndicator(radius: 20),
-            ],
-          )
+            onTap: _onCancelPressed,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Connecting ..."),
+                SizedBox(height: 21),
+                CupertinoActivityIndicator(radius: 20),
+              ],
+            )
+        )
+      );
+    }
+    else if (!_connected) {
+      return Container(
+        padding: EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          color: CupertinoTheme
+              .of(context)
+              .scaffoldBackgroundColor,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Not connected"),
+            SizedBox(height: 18),
+            CupertinoButton.filled(
+              child: Text("Connect"),
+              onPressed: () => _onConnectPressed(context),
+            ),
+          ],
         )
       );
     }

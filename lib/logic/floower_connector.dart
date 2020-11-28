@@ -107,7 +107,6 @@ class FloowerConnectorBle extends FloowerConnector {
 
   String _deviceId;
   StreamSubscription<ConnectionStateUpdate> _deviceConnection;
-  StreamSubscription<CharacteristicValue> _characteristicValuesSubscription;
 
   FloowerConnectorBle(this._bleProvider);
 
@@ -219,7 +218,13 @@ class FloowerConnectorBle extends FloowerConnector {
         characteristicId: FLOOWER_STATE_UUID,
         allowPairing: true
     ).then((value) {
-      print(value);
+      if (value.length == 0) { // state not initialized yet (bug in firmware)
+        return FloowerState(
+          petalsOpenLevel: 0,
+          color: Colors.black,
+        );
+      }
+
       assert(value.length == 4);
       assert(value[0] >= 0 && value[0] <= 100); // open level
       assert(value[1] >= 0 && value[1] <= 255); // R
@@ -236,7 +241,7 @@ class FloowerConnectorBle extends FloowerConnector {
       print("Got state $value");
       return FloowerState(
         petalsOpenLevel: value[0],
-        color: Color.fromRGBO(value[0], value[1], value[2], 1),
+        color: Color.fromRGBO(value[1], value[2], value[3], 1),
       );
     });
   }
@@ -386,7 +391,7 @@ class FloowerConnectorBle extends FloowerConnector {
   Future<void> connect(String deviceId, {
     Color pairingColor
   }) async {
-    _awaitConnectingStart = true;
+    _awaitConnectingStart = _connectionState != FloowerConnectionState.disconnected;
     _connectionState = FloowerConnectionState.connecting;
 
     await _deviceConnection?.cancel();
@@ -405,7 +410,6 @@ class FloowerConnectorBle extends FloowerConnector {
       try {
         _connectionState = FloowerConnectionState.disconnecting;
         notifyListeners();
-        await _characteristicValuesSubscription?.cancel();
         await _deviceConnection.cancel();
       } on Exception catch (e, _) {
         print("Error disconnecting from a device: $e");
@@ -446,7 +450,6 @@ class FloowerConnectorBle extends FloowerConnector {
 
         case DeviceConnectionState.disconnected:
           _connectionState = FloowerConnectionState.disconnected;
-          disconnect();
           break;
       }
 
