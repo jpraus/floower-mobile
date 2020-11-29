@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
+import 'package:Floower/ui/commons.dart';
 import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/logic/floower_model.dart';
-import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/ui/home_route.dart';
 import 'package:Floower/ui/cupertino_list.dart';
 import 'package:Floower/ui/settings/settings_name_dialog.dart';
@@ -18,7 +18,6 @@ class SettingsRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
       navigationBar: CupertinoNavigationBar(
         middle: Text('Settings'),
       ),
@@ -72,8 +71,8 @@ class _SettingsScreen extends StatelessWidget {
           onTap: () => _onNameTap(context),
           trailing: Row(
             children: [
-              Text(floowerModel.name, style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
-              const Icon(CupertinoIcons.forward, color: CupertinoColors.tertiaryLabel),
+              Text(floowerModel.name, style: FloowerTextTheme.secondaryLabel(context)),
+              Icon(CupertinoIcons.forward, color: FloowerTextTheme.secondaryColor()),
             ],
           ),
         ),
@@ -90,11 +89,11 @@ class _SettingsScreen extends StatelessWidget {
           title: Text("Touch Sensitivity"),
         ),
         CupertinoListItem(
-          leading: const Text("Low", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          leading: Text("Low", style: FloowerTextTheme.secondaryLabel(context)),
           title: TouchSensitivitySlider(
             floowerModel: floowerModel,
           ),
-          trailing: const Text("High", style: TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text("High", style: FloowerTextTheme.secondaryLabel(context)),
         )
       ],
     ));
@@ -111,26 +110,26 @@ class _SettingsScreen extends StatelessWidget {
       children: [
         CupertinoListItem(
           title: Text("Serial Number"),
-          trailing: Text(floowerModel.serialNumber?.toString()?.padLeft(4, '0') ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.serialNumber?.toString()?.padLeft(4, '0') ?? "", style: FloowerTextTheme.secondaryLabel(context)),
         ),
         CupertinoListItem(
           title: Text("Model"),
-          trailing: Text(floowerModel.modelName ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.modelName ?? "", style: FloowerTextTheme.secondaryLabel(context)),
         ),
         CupertinoListItem(
           title: Text("Firmware Version"),
-          trailing: Text(floowerModel.firmwareVersion?.toString() ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.firmwareVersion?.toString() ?? "", style: FloowerTextTheme.secondaryLabel(context)),
         ),
         CupertinoListItem(
           title: Text("Hardware Version"),
-          trailing: Text(floowerModel.hardwareRevision?.toString() ?? "", style: const TextStyle(color: CupertinoColors.tertiaryLabel)),
+          trailing: Text(floowerModel.hardwareRevision?.toString() ?? "", style: FloowerTextTheme.secondaryLabel(context)),
         ),
         CupertinoListItem(
           title: Text("App Version"),
           trailing: FutureBuilder(
             future: PackageInfo.fromPlatform(),
             builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
-              return Text(snapshot.hasData ? snapshot.data.version : "?", style: const TextStyle(color: CupertinoColors.tertiaryLabel));
+              return Text(snapshot.hasData ? snapshot.data.version : "?", style: FloowerTextTheme.secondaryLabel(context));
             },
           )
         ),
@@ -179,8 +178,8 @@ class _TouchSensitivitySliderState extends State<TouchSensitivitySlider> {
     return CupertinoSlider(
       value: _value,
       onChanged: _onChanged,
-      min: 35,
-      max: 55,
+      min: 40,
+      max: 50,
       divisions: 20,
     );
   }

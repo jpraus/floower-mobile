@@ -57,7 +57,7 @@ class _SettingNameDialogState extends State<SettingNameDialog> {
             automaticallyImplyLeading: false,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Icon(CupertinoIcons.clear_thick, color: CupertinoColors.label),
+              child: Icon(CupertinoIcons.clear_thick, color: CupertinoTheme.of(context).textTheme.textStyle.color),
             ),
           ),
           SliverList(
@@ -65,8 +65,7 @@ class _SettingNameDialogState extends State<SettingNameDialog> {
               SizedBox(height: 18),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 18),
-                child: Text("Give your Floower a unique name to distinguish it from others. The name will be changed after the Floower is restarted.",
-                    style: TextStyle(fontSize: 20, color: CupertinoColors.inactiveGray)),
+                child: Text("Give your Floower a unique name to distinguish it from others. The name will be changed after the Floower is restarted.", style: CupertinoTheme.of(context).textTheme.textStyle),
               ),
               SizedBox(height: 18),
               Container(

@@ -122,7 +122,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       return SizedBox(width: 0, height: 0);
     }
 
-    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
+    Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
     List<Widget> items = [];
 
     for (int i = 0; i < _colorScheme.length; i++) {
@@ -196,7 +196,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       children: [Container(
         width: double.infinity,
         padding: EdgeInsets.all(18),
-        color: Colors.white,
+        color: CupertinoTheme.of(context).barBackgroundColor,
         child: ReorderableWrap(
           children: items,
           spacing: 16,
@@ -284,7 +284,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   Widget build(BuildContext context) {
     TinyColor currentColor = TinyColor.fromHSV(currentHsvColor);
 
-    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
+    Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
     List<Widget> defaultColors = [];
 
     for (FloowerColor color in FloowerColor.DEFAULT_SCHEME) {
@@ -314,7 +314,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                   largeTitle: Text(widget.originalColor == null ? "Add New Color" : "Edit Color"),
                   leading: GestureDetector(
                     onTap: () => _onCancel(context),
-                    child: Icon(CupertinoIcons.clear_thick, color: CupertinoColors.label),
+                    child: Icon(CupertinoIcons.clear_thick, color: CupertinoTheme.of(context).textTheme.textStyle.color),
                   ),
                   /*trailing: GestureDetector(
                     onTap: () => _onSave(context),

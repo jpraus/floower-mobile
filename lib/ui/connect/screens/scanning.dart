@@ -83,7 +83,7 @@ class BleScanList extends StatelessWidget {
             children: <Widget>[
               Text(scanIsInProgress
                   ? "SCANNING FOR DEVICES"
-                  : "DISCOVERED DEVICES", style: FloowerTextTheme.listLabel),
+                  : "DISCOVERED DEVICES"),
               const SizedBox(width: 10),
               scanIsInProgress
                   ? CupertinoActivityIndicator()

@@ -37,14 +37,14 @@ class BleConnectInstructions extends StatelessWidget {
         Container(
           constraints: BoxConstraints(maxWidth: 400),
           padding: EdgeInsets.only(bottom: 18, left: 20, right: 20),
-          child: Text("Hold your Floower's leaf for 5 seconds\nuntil the blossom starts flashing blue.", textAlign: TextAlign.center),
+          child: Text("Hold your Floower's leaf for 5 seconds\nuntil the blossom starts flashing blue.", textAlign: TextAlign.center, style: CupertinoTheme.of(context).textTheme.textStyle),
         ),
         Container(
           width: imageSize,
           height: imageSize,
           child: Image(
             fit: BoxFit.fitHeight,
-            image: CupertinoTheme.of(context).brightness == Brightness.dark
+            image: WidgetsBinding.instance.window.platformBrightness == Brightness.dark
                 ? AssetImage("assets/images/touch-floower-dark.jpg")
                 : AssetImage("assets/images/touch-floower-light.jpg")
           ),

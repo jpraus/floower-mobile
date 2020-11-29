@@ -26,7 +26,7 @@ class HomeRoute extends StatelessWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: CupertinoTheme.of(context).brightness == Brightness.dark
+        middle: WidgetsBinding.instance.window.platformBrightness == Brightness.dark
             ? Image.asset('assets/images/floower-logo-dark.png', height: 18)
             : Image.asset('assets/images/floower-logo-light.png', height: 18),
         trailing: floowerModel.connected
@@ -217,7 +217,7 @@ class _ColorPicker extends StatelessWidget {
       return SizedBox(width: 0, height: 0);
     }
 
-    Color borderColor = CupertinoTheme.of(context).brightness == Brightness.light ? Colors.black : Colors.white;
+    Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
 
     double circleSize = min(maxHeight / (snapshot.data.length + 1), 70);
     List<Widget> items = snapshot.data.map((color) => GestureDetector(
@@ -315,7 +315,7 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
           SizedBox(width: 5),
           icon,
           SizedBox(width: 5),
-          Text("$level%")
+          Text("$level%", style: CupertinoTheme.of(context).textTheme.textStyle)
         ],
       ),
     );
@@ -417,7 +417,7 @@ class _AutoConnectState extends State<_AutoConnect> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Connecting ..."),
+                Text("Connecting ...", style: CupertinoTheme.of(context).textTheme.textStyle),
                 SizedBox(height: 21),
                 CupertinoActivityIndicator(radius: 20),
               ],
@@ -437,7 +437,7 @@ class _AutoConnectState extends State<_AutoConnect> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Not connected"),
+            Text("Not connected", style: CupertinoTheme.of(context).textTheme.textStyle),
             SizedBox(height: 18),
             CupertinoButton.filled(
               child: Text("Connect"),

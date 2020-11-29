@@ -21,7 +21,7 @@ class DiscoveredDeviceListItem extends StatelessWidget {
       onTap: () => onTap(device),
       title: Text(DeviceUtils.deviceName(device),
         overflow: TextOverflow.ellipsis,
-        maxLines: 1,
+        maxLines: 1
       ),
       trailing: GestureDetector(
         child: Text("CONNECT", style: CupertinoTheme.of(context).textTheme.actionTextStyle),

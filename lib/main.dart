@@ -25,7 +25,6 @@ void main() {
   final floowerConnector = FloowerConnectorBle(bleProvider);
   final floowerModel = FloowerModel();
   final persistentStorage = PersistentStorage();
-  //final bleConnectionWatcher = FloowerConnectionWatcher();
 
   ble.logLevel = LogLevel.verbose;
 
@@ -42,7 +41,7 @@ void main() {
         theme: CupertinoThemeData(
           primaryColor: CupertinoColors.activeBlue,
           //brightness: Brightness.dark
-          brightness: Brightness.light
+          //brightness: Brightness.light
         ),
         debugShowCheckedModeBanner: false,
         initialRoute: HomeRoute.ROUTE_NAME,

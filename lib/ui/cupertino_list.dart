@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:Floower/ui/commons.dart';
 
 class CupertinoList extends StatelessWidget {
 
@@ -25,7 +24,10 @@ class CupertinoList extends StatelessWidget {
     if (heading != null) {
       column.add(Padding(
         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
-        child: heading,
+        child: DefaultTextStyle(
+          style: FloowerTextTheme.listTitle(context),
+          child: heading,
+        )
       ));
     }
 
@@ -116,15 +118,18 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
         duration: Duration(milliseconds: 50),
         child: Padding(
           padding: EdgeInsets.all(22),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              widget.leading != null ? widget.leading : SizedBox(width: 0),
-              Expanded(
-                child: widget.title
-              ),
-              widget.trailing != null ? widget.trailing : SizedBox(width: 0)
-            ],
+          child: DefaultTextStyle(
+            style: CupertinoTheme.of(context).textTheme.textStyle,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                widget.leading != null ? widget.leading : SizedBox(width: 0),
+                Expanded(
+                  child: widget.title
+                ),
+                widget.trailing != null ? widget.trailing : SizedBox(width: 0)
+              ],
+            ),
           ),
         ),
       ),

@@ -75,7 +75,7 @@ class FloowerConnected extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: 18),
-            child: Text("Is your Floower yellow now?"),
+            child: Text("Is your Floower yellow now?", style: CupertinoTheme.of(context).textTheme.textStyle),
           ),
           CupertinoButton.filled(
               child: Text("Yes"),
@@ -152,7 +152,7 @@ class FloowerConnectFailed extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: 18),
-            child: Text(message ?? "Cannot connect to selected Floower"),
+            child: Text(message ?? "Cannot connect to selected Floower", style: CupertinoTheme.of(context).textTheme.textStyle),
           ),
           CupertinoButton.filled(
               child: Text("Try again"),
