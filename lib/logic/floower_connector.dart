@@ -19,8 +19,9 @@ enum FloowerConnectionState {
 class FloowerState {
   final int petalsOpenLevel;
   final Color color;
-
   FloowerState({this.petalsOpenLevel, this.color});
+  String toString() => "(petalsOpenLevel=$petalsOpenLevel color=$color)";
+  bool operator ==(o) => o is FloowerState && petalsOpenLevel == o.petalsOpenLevel && color == o.color;
 }
 
 enum WriteError {
@@ -65,6 +66,7 @@ class BatteryState {
   final bool discharging;
   BatteryState({this.charging = false, this.discharging = false});
   String toString() => "(charging=$charging discharging=$discharging)";
+  bool operator ==(o) => o is BatteryState && charging == o.charging && discharging == o.discharging;
 }
 
 abstract class FloowerConnector extends ChangeNotifier {
@@ -266,55 +268,43 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   @override
-  Stream<FloowerState> subscribeState() {
-    assert(_connectionState == FloowerConnectionState.paired || _connectionState == FloowerConnectionState.pairing);
-
-    // TODO: handle errors
-    return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
-      deviceId: _deviceId,
-      serviceId: FLOOWER_SERVICE_UUID,
-      characteristicId: FLOOWER_STATE_UUID,
-    )).map((bytes) {
-      print("Got state notification $bytes");
-
-      return FloowerState();
-    });
-  }
-
-  @override
   Future<FloowerState> readState() {
     return _readCharacteristics(
         serviceId: FLOOWER_SERVICE_UUID,
         characteristicId: FLOOWER_STATE_UUID,
         allowPairing: true
     ).then((value) {
-      if (value.length == 0) { // state not initialized yet (bug in firmware)
-        return FloowerState(
-          petalsOpenLevel: 0,
-          color: Colors.black,
-        );
-      }
-
-      if (value.length != 4) {
-        throw ValueException(message: "Invalid format of state value");
-      }
-      if (value[0] < 0 || value[0] > 100) {
-        throw ValueException(message: "Petals open level value out of range");
-      }
-      if (value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255 || value[3] < 0 || value[3] > 255) {
-        throw ValueException(message: "RGB color values out of range");
-      }
-
-      print("Got state $value");
-      return FloowerState(
-        petalsOpenLevel: value[0],
-        color: Color.fromRGBO(value[1], value[2], value[3], 1),
-      );
+      return _parseState(value);
     }).catchError((e, stackTrace) {
       print("Failed to get state: ${e.toString()}");
       print(stackTrace);
       return null;
     });
+  }
+
+  FloowerState _parseState(List<int> value) {
+    if (value.length == 0) { // state not initialized yet (bug in firmware)
+      return FloowerState(
+        petalsOpenLevel: 0,
+        color: Colors.black,
+      );
+    }
+
+    if (value.length != 4) {
+      throw ValueException(message: "Invalid format of state value");
+    }
+    if (value[0] < 0 || value[0] > 100) {
+      throw ValueException(message: "Petals open level value out of range");
+    }
+    if (value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255 || value[3] < 0 || value[3] > 255) {
+      throw ValueException(message: "RGB color values out of range");
+    }
+
+    print("Got state $value");
+    return FloowerState(
+      petalsOpenLevel: value[0],
+      color: Color.fromRGBO(value[1], value[2], value[3], 1),
+    );
   }
 
   @override
@@ -477,6 +467,21 @@ class FloowerConnectorBle extends FloowerConnector {
       }
     });
     // TODO: handle NoBleCharacteristicDataReceived, NoBleDeviceConnectionStateReceived
+  }
+
+  @override
+  Stream<FloowerState> subscribeState() {
+    assert(_connectionState == FloowerConnectionState.paired || _connectionState == FloowerConnectionState.pairing);
+
+    // TODO: handle errors
+    return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
+      deviceId: _deviceId,
+      serviceId: FLOOWER_SERVICE_UUID,
+      characteristicId: FLOOWER_STATE_UUID,
+    )).map((value) {
+      print("Got state notification $value");
+      return _parseState(value);
+    });
   }
 
   @override

@@ -8,6 +8,7 @@ class FloowerModel extends ChangeNotifier {
 
   FloowerConnector _floowerConnector;
   bool _paired = false;
+  StreamSubscription _stateSubscription;
   StreamSubscription _batteryLevelSubscription;
   StreamSubscription _batteryStateSubscription;
 
@@ -131,6 +132,7 @@ class FloowerModel extends ChangeNotifier {
 
   void disconnect() async {
     if (_floowerConnector != null) {
+      await _stateSubscription?.cancel();
       await _batteryLevelSubscription?.cancel();
       await _batteryStateSubscription?.cancel();
       _floowerConnector.removeListener(_checkFloowerConnectorState);
@@ -171,14 +173,24 @@ class FloowerModel extends ChangeNotifier {
     _hardwareRevision = await _floowerConnector.readHardwareRevision();
     notifyListeners();
 
-    // battery level
+    // subscriptions
+    await _stateSubscription?.cancel();
+    _stateSubscription = _floowerConnector.subscribeState().listen(_onStateChange);
     await _batteryLevelSubscription?.cancel();
     _batteryLevelSubscription = _floowerConnector.subscribeBatteryLevel().listen(_onBatteryLevel);
     await _batteryStateSubscription?.cancel();
     _batteryStateSubscription = _floowerConnector.subscribeBatteryState().listen(_onBatteryState);
   }
 
-  void _onBatteryLevel(batteryLevel) {
+  void _onStateChange(FloowerState state) {
+    if (_paired) {
+      _petalsOpenLevel = state.petalsOpenLevel;
+      _color = FloowerColor.fromHwColor(state.color);
+      notifyListeners();
+    }
+  }
+
+  void _onBatteryLevel(int batteryLevel) {
     if (_paired && _batteryLevel != batteryLevel) {
       print("Updating battery level: $batteryLevel%");
       _batteryLevel = batteryLevel;
@@ -188,7 +200,7 @@ class FloowerModel extends ChangeNotifier {
 
   void _onBatteryState(BatteryState batteryState) {
     if (_paired && _batteryState != batteryState) {
-      print("Updating battery state: $batteryState%");
+      print("Updating battery state: $batteryState");
       _batteryState = batteryState;
       notifyListeners();
     }
