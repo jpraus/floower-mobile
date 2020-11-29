@@ -23,12 +23,39 @@ class FloowerState {
   FloowerState({this.petalsOpenLevel, this.color});
 }
 
+enum WriteError {
+  generic,
+  disconnected,
+  unknownCharacteristics,
+}
+
 class WriteResult {
   final bool success;
+  final WriteError error;
   final String errorMessage;
 
   WriteResult({
-    this.success = true,
+    this.success,
+    this.error,
+    this.errorMessage
+  });
+}
+
+enum ReadError {
+  generic,
+  unknownCharacteristics,
+}
+
+class ReadResult {
+  final List<int> data;
+  final bool success;
+  final ReadError error;
+  final String errorMessage;
+
+  ReadResult({
+    this.data,
+    this.success,
+    this.error,
     this.errorMessage
   });
 }
@@ -149,7 +176,7 @@ class FloowerConnectorBle extends FloowerConnector {
   @override
   Future<WriteResult> writeName(String name) {
     if (name.isEmpty || name.length > FloowerConnector.MAX_NAME_LENGTH) {
-      throw ValueException("Name cannot be empty or longer then ${FloowerConnector.MAX_NAME_LENGTH}");
+      throw ValueException(message: "Name cannot be empty or longer then ${FloowerConnector.MAX_NAME_LENGTH}");
     }
 
     return _writeCharacteristic(
@@ -162,7 +189,7 @@ class FloowerConnectorBle extends FloowerConnector {
   @override
   Future<WriteResult> writeTouchThreshold(int touchThreshold) {
     if (touchThreshold < 30 && touchThreshold > 60) {
-      throw ValueException("Invalid touch threshold value");
+      throw ValueException(message: "Invalid touch threshold value");
     }
 
     return _writeCharacteristic(
@@ -193,21 +220,37 @@ class FloowerConnectorBle extends FloowerConnector {
     @required List<int> value,
     bool allowPairing = false
   }) {
-    assert(_connectionState == FloowerConnectionState.paired || (allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing)));
+    if (_connectionState != FloowerConnectionState.paired && !(allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing))) {
+      return Future.value(WriteResult(
+          success: false,
+          errorMessage: "Not connected to Floower",
+          error: WriteError.disconnected
+      ));
+    }
 
     return _bleProvider.ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
-      deviceId: _deviceId,
-      serviceId: serviceId,
-      characteristicId: characteristicId,
+        deviceId: _deviceId,
+        serviceId: serviceId,
+        characteristicId: characteristicId,
     ), value: value).then((value) {
-      return WriteResult();
-    }).catchError((e) {
-      // TODO: handle errors
-      if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
-        return WriteResult(success: false, errorMessage: "Not a compatibile device");
+      return WriteResult(
+          success: true
+      );
+    }).catchError((e, stackTrace) {
+      WriteError writeError;
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+        writeError = WriteError.unknownCharacteristics;
       }
-      print("Unhandled write error");
-      throw e;
+      else {
+        writeError = WriteError.generic;
+      }
+      print("Characteristics write error ${e.toString()}");
+      print(stackTrace);
+      return WriteResult(
+        success: false,
+        errorMessage: e.message.toString(),
+        error: writeError
+      );
     });
   }
 
@@ -225,17 +268,14 @@ class FloowerConnectorBle extends FloowerConnector {
         );
       }
 
-      assert(value.length == 4);
-      assert(value[0] >= 0 && value[0] <= 100); // open level
-      assert(value[1] >= 0 && value[1] <= 255); // R
-      assert(value[2] >= 0 && value[2] <= 255); // G
-      assert(value[3] >= 0 && value[3] <= 255); // B
-
+      if (value.length != 4) {
+        throw ValueException(message: "Invalid format of state value");
+      }
       if (value[0] < 0 || value[0] > 100) {
-        throw ValueException("Petals open level value out of range");
+        throw ValueException(message: "Petals open level value out of range");
       }
       if (value[1] < 0 || value[1] > 255 || value[2] < 0 || value[2] > 255 || value[3] < 0 || value[3] > 255) {
-        throw ValueException("RGB color values out of range");
+        throw ValueException(message: "RGB color values out of range");
       }
 
       print("Got state $value");
@@ -243,6 +283,10 @@ class FloowerConnectorBle extends FloowerConnector {
         petalsOpenLevel: value[0],
         color: Color.fromRGBO(value[1], value[2], value[3], 1),
       );
+    }).catchError((e, stackTrace) {
+      print("Failed to get state: ${e.toString()}");
+      print(stackTrace);
+      return null;
     });
   }
 
@@ -255,6 +299,10 @@ class FloowerConnectorBle extends FloowerConnector {
       String name = String.fromCharCodes(value);
       print("Got name '$name'");
       return name;
+    }).catchError((e, stackTrace) {
+      print("Failed to get name ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -267,6 +315,10 @@ class FloowerConnectorBle extends FloowerConnector {
       int touchThreshold = value[0];
       print("Got touch threshold '$touchThreshold'");
       return touchThreshold;
+    }).catchError((e, stackTrace) {
+      print("Failed to get touch threshold: ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -279,6 +331,10 @@ class FloowerConnectorBle extends FloowerConnector {
       String modelName = String.fromCharCodes(value);
       print("Got model name '$modelName'");
       return modelName;
+    }).catchError((e, stackTrace) {
+      print("Failed to get model name: ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -291,6 +347,10 @@ class FloowerConnectorBle extends FloowerConnector {
       int serialNumber = int.tryParse(String.fromCharCodes(value));
       print("Got serial number '$serialNumber'");
       return serialNumber;
+    }).catchError((e, stackTrace) {
+      print("Failed to get serial number: ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -303,6 +363,10 @@ class FloowerConnectorBle extends FloowerConnector {
       int hardwareRevision = int.tryParse(String.fromCharCodes(value));
       print("Got hardware revision '$hardwareRevision'");
       return hardwareRevision;
+    }).catchError((e, stackTrace) {
+      print("Failed to get hardware revision: ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -315,6 +379,10 @@ class FloowerConnectorBle extends FloowerConnector {
       int firmwareVersion = int.tryParse(String.fromCharCodes(value));
       print("Got firmware version '$firmwareVersion'");
       return firmwareVersion;
+    }).catchError((e, stackTrace) {
+      print("Failed to get firmware revision: ${e.toString()}");
+      print(stackTrace);
+      return "";
     });
   }
 
@@ -324,10 +392,12 @@ class FloowerConnectorBle extends FloowerConnector {
         serviceId: FLOOWER_SERVICE_UUID,
         characteristicId: FLOOWER_COLORS_SCHEME_UUID
     ).then((value) {
-      assert(value.length % 3 == 0);
+      if (value.length % 3 != 0) {
+        throw ValueException(message: "Invalid colors scheme format");
+      }
       for (int byte in value) {
         if (byte < 0 || byte > 255) {
-          throw ValueException("RGB color values out of range");
+          throw ValueException(message: "RGB color values out of range");
         }
       }
       print("Got colors scheme ${value.toString()}");
@@ -338,29 +408,48 @@ class FloowerConnectorBle extends FloowerConnector {
         colors.add(Color.fromRGBO(value[byte], value[byte + 1], value[byte + 2], 1));
       }
       return colors;
+    }).catchError((e, stackTrace) {
+      print("Failed to get color scheme: ${e.toString()}");
+      print(stackTrace);
+      return List<Color>();
     });
   }
 
   Future<List<int>> _readCharacteristics({
     @required Uuid serviceId,
     @required Uuid characteristicId,
-    bool allowPairing = false
-  }) {
-    assert(_connectionState == FloowerConnectionState.paired || (allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing)));
+    bool allowPairing = false,
+    bool retry = true,
+    bool disconnectOnError = true
+  }) async {
+    if (_connectionState != FloowerConnectionState.paired && !(allowPairing && (_connectionState == FloowerConnectionState.connected || _connectionState == FloowerConnectionState.pairing))) {
+      throw DisconnectedException(message: "Not connected to Floower");
+    }
 
+    print("Getting characteristics $characteristicId");
     return _bleProvider.ble.readCharacteristic(QualifiedCharacteristic(
         deviceId: _deviceId,
         serviceId: serviceId,
         characteristicId: characteristicId
-    )).catchError((e) {
-      // TODO: handle errors
-      //if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
-      // TODO: response
-      //print("Unknown characteristics");
-      //}
-      print("Unhandled read error");
-      throw e;
+    )).then((value) {
+      print("Got characteristics $characteristicId: $value");
+      return value;
+    }).catchError((e, stackTrace) {
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+        throw UnknownCharacteristicsException(message: e.message.toString());
+      }
+      print("Unhandled characteristic read error ${e.toString()}");
+      print(stackTrace);
+
+      if (disconnectOnError) {
+        disconnect();
+        throw DisconnectedException(message: e.message.toString());
+      }
+      else {
+        throw FailureException(message: e.message.toString());
+      }
     });
+    // TODO: handle NoBleCharacteristicDataReceived, NoBleDeviceConnectionStateReceived
   }
 
   @override
@@ -468,7 +557,7 @@ class FloowerConnectorBle extends FloowerConnector {
     WriteResult result = await writeState(openLevel: 20, color: _pairingColor, duration: transitionDuration);
     if (!result.success) {
       _connectionFailureMessage = result.errorMessage;
-      disconnect();
+      await disconnect();
     }
     else {
       // if success close again
@@ -491,17 +580,52 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 }
 
-class ValueException implements Exception {
+class BleConnector {
 
-  String _message;
+  final BleProvider bleProvider;
 
-  ValueException([String message = 'Invalid value']) {
-    this._message = message;
+  BleConnector(this.bleProvider);
+
+  Future<List<int>> readCharacteristics({
+    @required String deviceId,
+    @required Uuid serviceId,
+    @required Uuid characteristicId
+  }) {
+    return bleProvider.ble.readCharacteristic(QualifiedCharacteristic(
+        deviceId: deviceId,
+        serviceId: serviceId,
+        characteristicId: characteristicId
+    )).catchError((e) {
+      // TODO: handle errors
+      //if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
+      // TODO: response
+      //print("Unknown characteristics");
+      //}
+      print("Unhandled read error");
+      throw e;
+    });
   }
 
-  @override
-  String toString() {
-    return _message;
+  Future<WriteResult> writeCharacteristic({
+    @required String deviceId,
+    @required Uuid serviceId,
+    @required Uuid characteristicId,
+    @required List<int> value
+  }) {
+    return bleProvider.ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
+      deviceId: deviceId,
+      serviceId: serviceId,
+      characteristicId: characteristicId,
+    ), value: value).then((value) {
+      return WriteResult();
+    }).catchError((e) {
+      // TODO: handle errors
+      if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
+        return WriteResult(success: false, errorMessage: "Not a compatibile device");
+      }
+      print("Unhandled write error");
+      throw e;
+    });
   }
 }
 
@@ -591,4 +715,26 @@ class FloowerConnectorDemo extends FloowerConnector {
     _paired = false;
     notifyListeners();
   }
+}
+
+class ConnectorException implements Exception {
+  final String message;
+  ConnectorException({this.message = "Invalid value"});
+  String toString() => message;
+}
+
+class ValueException extends ConnectorException {
+  ValueException({message = "Invalid value"}) : super(message: message);
+}
+
+class DisconnectedException extends ConnectorException {
+  DisconnectedException({message = "Disconnected from device"}) : super(message: message);
+}
+
+class UnknownCharacteristicsException extends ConnectorException {
+  UnknownCharacteristicsException({message = "Unknown characteristics"}) : super(message: message);
+}
+
+class FailureException extends ConnectorException {
+  FailureException({message = "Failed"}) : super(message: message);
 }

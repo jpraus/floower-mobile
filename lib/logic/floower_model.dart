@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:Floower/ble/ble_provider.dart';
-import 'package:Floower/logic/persistent_storage.dart';
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:Floower/logic/floower_color.dart';
 
@@ -154,9 +152,11 @@ class FloowerModel extends ChangeNotifier {
     print("Loading Floower Information");
 
     FloowerState state = await _floowerConnector.readState();
-    _color = FloowerColor.fromHwColor(state.color);
-    _petalsOpenLevel = state.petalsOpenLevel;
-    notifyListeners();
+    if (state != null) {
+      _color = FloowerColor.fromHwColor(state.color);
+      _petalsOpenLevel = state.petalsOpenLevel;
+      notifyListeners();
+    }
 
     _name = await _floowerConnector.readName();
     _touchThreshold = await _floowerConnector.readTouchThreshold();
@@ -190,42 +190,5 @@ class Debouncer {
   debounce(VoidCallback action) {
     _timer?.cancel();
     _timer = Timer(duration, action);
-  }
-}
-
-class FloowerConnectionWatcher extends ChangeNotifier {
-
-  final PersistentStorage _persistentStorage;
-  final BleProvider _bleProvider;
-  final FloowerConnectorBle _floowerConnectorBle;
-  final FloowerModel _floowerModel;
-
-  bool _wasReady = false;
-
-  FloowerConnectionWatcher(this._persistentStorage, this._bleProvider, this._floowerConnectorBle, this._floowerModel) {
-    _bleProvider.addListener(_onBleProviderChange);
-    _floowerConnectorBle.addListener(_onFloowerConnectorChange);
-    //_floowerModel.addListener(_onFloowerModelChange);
-  }
-
-  void autoconnect() async {
-    String deviceId = _persistentStorage.pairedDevice;
-    if (deviceId != null && this._bleProvider.ready) {
-      print("Auto connecting to device $deviceId");
-      await _floowerConnectorBle.connect(deviceId);
-      _floowerModel.connect(_floowerConnectorBle);
-    }
-  }
-
-  void _onBleProviderChange() async {
-    print("Ble change");
-    if (this._bleProvider.ready && !_wasReady) {
-      _wasReady = true;
-
-    }
-  }
-
-  void _onFloowerConnectorChange() {
-    // disconnected
   }
 }
