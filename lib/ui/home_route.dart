@@ -136,10 +136,31 @@ class _Floower extends StatelessWidget {
                     width: refHeight / 4.5,
                     height: refHeight / 3.5,
                     color: Colors.transparent,
+                    //color: Colors.blue
                   ),
                 ),
                 onTap: () => floowerModel.togglePetals(),
               ) : SizedBox.shrink(),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: floowerModel.connected ? GestureDetector(
+                  child: Transform.rotate(
+                    //angle: -0.8,
+                    angle: 0,
+                    child: Container(
+                        width: refHeight / 4,
+                        height: refHeight / 3,
+                        color: Colors.transparent,
+                        //color: Colors.blue
+                    ),
+                  ),
+                  onTap: () => floowerModel.togglePetals(),
+                ) : SizedBox.shrink(),
+              )
             ),
             Visibility(
               visible: floowerModel.connected && !floowerModel.demo,
