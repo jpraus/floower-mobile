@@ -9,6 +9,7 @@ class FloowerModel extends ChangeNotifier {
   FloowerConnector _floowerConnector;
   bool _paired = false;
   StreamSubscription _batteryLevelSubscription;
+  StreamSubscription _batteryStateSubscription;
 
   Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
   Debouncer _touchThresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
@@ -27,6 +28,7 @@ class FloowerModel extends ChangeNotifier {
   int _firmwareVersion;
   int _hardwareRevision;
   int _batteryLevel = -1; // -1 = unknown
+  BatteryState _batteryState;
 
   FloowerColor get color => _color;
   String get name => _name;
@@ -36,11 +38,13 @@ class FloowerModel extends ChangeNotifier {
   int get firmwareVersion => _firmwareVersion;
   int get hardwareRevision => _hardwareRevision;
   int get batteryLevel => _batteryLevel;
+  bool get batteryCharging => _batteryState?.charging == true;
 
   bool get connected => _paired;
   bool get connecting => connectionState == FloowerConnectionState.connecting || connectionState == FloowerConnectionState.pairing;
   bool get disconnected => !connected && !connecting;
   FloowerConnectionState get connectionState => _floowerConnector != null ? _floowerConnector.state : FloowerConnectionState.disconnected;
+  bool get demo => _floowerConnector?.demo == true;
 
   void setColor(FloowerColor color) {
     _color = color;
@@ -128,6 +132,7 @@ class FloowerModel extends ChangeNotifier {
   void disconnect() async {
     if (_floowerConnector != null) {
       await _batteryLevelSubscription?.cancel();
+      await _batteryStateSubscription?.cancel();
       _floowerConnector.removeListener(_checkFloowerConnectorState);
       await _floowerConnector.disconnect();
       _floowerConnector = null;
@@ -169,12 +174,22 @@ class FloowerModel extends ChangeNotifier {
     // battery level
     await _batteryLevelSubscription?.cancel();
     _batteryLevelSubscription = _floowerConnector.subscribeBatteryLevel().listen(_onBatteryLevel);
+    await _batteryStateSubscription?.cancel();
+    _batteryStateSubscription = _floowerConnector.subscribeBatteryState().listen(_onBatteryState);
   }
 
   void _onBatteryLevel(batteryLevel) {
     if (_paired && _batteryLevel != batteryLevel) {
       print("Updating battery level: $batteryLevel%");
       _batteryLevel = batteryLevel;
+      notifyListeners();
+    }
+  }
+
+  void _onBatteryState(BatteryState batteryState) {
+    if (_paired && _batteryState != batteryState) {
+      print("Updating battery state: $batteryState%");
+      _batteryState = batteryState;
       notifyListeners();
     }
   }

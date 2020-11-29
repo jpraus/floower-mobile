@@ -141,13 +141,16 @@ class _Floower extends StatelessWidget {
                 onTap: () => floowerModel.togglePetals(),
               ) : SizedBox.shrink(),
             ),
-            Positioned(
-              right: 20,
-              bottom: 20,
-              child: _BatteryLevelIndicator(),
+            Visibility(
+              visible: floowerModel.connected && !floowerModel.demo,
+              child: Positioned(
+                right: 20,
+                bottom: 20,
+                child: _BatteryLevelIndicator(),
+              ),
             ),
             Visibility(
-              visible: !floowerModel.connected,
+              visible: !floowerModel.connected || floowerModel.demo,
               child: Positioned(
                 right: 15,
                 bottom: 15,
@@ -157,7 +160,7 @@ class _Floower extends StatelessWidget {
                     color: CupertinoTheme.of(context).scaffoldBackgroundColor,
                   ),
                   child: CupertinoButton(
-                    child: Text("Find out more"),
+                    child: Text("Get Floower"),
                     onPressed: _onPurchase,
                   ),
                 )
@@ -264,7 +267,7 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
       return Container();
     }
 
-    if (level == 100) {
+    if (floowerModel.batteryCharging) {
       icon = Icon(CupertinoIcons.battery_charging);
     }
     else if (level > 75) {

@@ -60,12 +60,20 @@ class ReadResult {
   });
 }
 
+class BatteryState {
+  final bool charging;
+  final bool discharging;
+  BatteryState({this.charging = false, this.discharging = false});
+  String toString() => "(charging=$charging discharging=$discharging)";
+}
+
 abstract class FloowerConnector extends ChangeNotifier {
 
   static const int MAX_NAME_LENGTH = 25;
   static const int MAX_SCHEME_COLORS = 10;
 
   FloowerConnectionState get state;
+  bool get demo;
 
   Future<WriteResult> writeState({
     int openLevel,
@@ -78,6 +86,8 @@ abstract class FloowerConnector extends ChangeNotifier {
   Future<WriteResult> writeTouchThreshold(int touchThreshold);
 
   Future<WriteResult> writeColorScheme({List<Color> colorScheme});
+
+  Stream<FloowerState> subscribeState();
 
   Future<FloowerState> readState();
 
@@ -96,6 +106,8 @@ abstract class FloowerConnector extends ChangeNotifier {
   Future<List<Color>> readColorsScheme();
 
   Stream<int> subscribeBatteryLevel();
+
+  Stream<BatteryState> subscribeBatteryState();
 
   Future<void> disconnect();
 }
@@ -137,9 +149,8 @@ class FloowerConnectorBle extends FloowerConnector {
 
   FloowerConnectorBle(this._bleProvider);
 
-  @override
   FloowerConnectionState get state => _connectionState;
-
+  bool get demo => false;
   String get connectionFailureMessage => _connectionFailureMessage;
   String get deviceId => _deviceId;
 
@@ -251,6 +262,22 @@ class FloowerConnectorBle extends FloowerConnector {
         errorMessage: e.message.toString(),
         error: writeError
       );
+    });
+  }
+
+  @override
+  Stream<FloowerState> subscribeState() {
+    assert(_connectionState == FloowerConnectionState.paired || _connectionState == FloowerConnectionState.pairing);
+
+    // TODO: handle errors
+    return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
+      deviceId: _deviceId,
+      serviceId: FLOOWER_SERVICE_UUID,
+      characteristicId: FLOOWER_STATE_UUID,
+    )).map((bytes) {
+      print("Got state notification $bytes");
+
+      return FloowerState();
     });
   }
 
@@ -477,6 +504,29 @@ class FloowerConnectorBle extends FloowerConnector {
     });
   }
 
+  @override
+  Stream<BatteryState> subscribeBatteryState() {
+    assert(_connectionState == FloowerConnectionState.paired || _connectionState == FloowerConnectionState.pairing);
+
+    // TODO: handle errors
+    return _bleProvider.ble.subscribeToCharacteristic(QualifiedCharacteristic(
+      deviceId: _deviceId,
+      serviceId: BATTERY_UUID,
+      characteristicId: BATTERY_POWER_STATE_UUID,
+    )).map((bytes) {
+      print("Got battery state notification $bytes");
+      if (bytes.length == 1) {
+        int dischargingState = (bytes[0] >> 2) & 3;
+        int chargingState = (bytes[0] >> 4) & 3;
+        return BatteryState(
+          discharging: dischargingState == 3,
+          charging: chargingState == 3
+        );
+      }
+      return BatteryState();
+    });
+  }
+
   Future<void> connect(String deviceId, {
     Color pairingColor
   }) async {
@@ -580,55 +630,6 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 }
 
-class BleConnector {
-
-  final BleProvider bleProvider;
-
-  BleConnector(this.bleProvider);
-
-  Future<List<int>> readCharacteristics({
-    @required String deviceId,
-    @required Uuid serviceId,
-    @required Uuid characteristicId
-  }) {
-    return bleProvider.ble.readCharacteristic(QualifiedCharacteristic(
-        deviceId: deviceId,
-        serviceId: serviceId,
-        characteristicId: characteristicId
-    )).catchError((e) {
-      // TODO: handle errors
-      //if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
-      // TODO: response
-      //print("Unknown characteristics");
-      //}
-      print("Unhandled read error");
-      throw e;
-    });
-  }
-
-  Future<WriteResult> writeCharacteristic({
-    @required String deviceId,
-    @required Uuid serviceId,
-    @required Uuid characteristicId,
-    @required List<int> value
-  }) {
-    return bleProvider.ble.writeCharacteristicWithResponse(QualifiedCharacteristic(
-      deviceId: deviceId,
-      serviceId: serviceId,
-      characteristicId: characteristicId,
-    ), value: value).then((value) {
-      return WriteResult();
-    }).catchError((e) {
-      // TODO: handle errors
-      if (e.message is GenericFailure<CharacteristicValueUpdateError> || e.message is GenericFailure<WriteCharacteristicFailure>) {
-        return WriteResult(success: false, errorMessage: "Not a compatibile device");
-      }
-      print("Unhandled write error");
-      throw e;
-    });
-  }
-}
-
 class FloowerConnectorDemo extends FloowerConnector {
 
   bool _paired = true;
@@ -638,8 +639,8 @@ class FloowerConnectorDemo extends FloowerConnector {
   String _name = "Floower Demo";
   int _touchThreshold = 45;
 
-  @override
-  FloowerConnectionState get state => FloowerConnectionState.paired;
+  FloowerConnectionState get state => _paired ? FloowerConnectionState.paired : FloowerConnectionState.disconnected;
+  bool get demo => true;
 
   @override
   Future<WriteResult> writeState({
@@ -673,6 +674,10 @@ class FloowerConnectorDemo extends FloowerConnector {
     _colorsScheme = colorScheme;
     notifyListeners();
     return WriteResult(success: true);
+  }
+
+  Stream<FloowerState> subscribeState() {
+    return Stream.value(FloowerState(petalsOpenLevel: _petalsOpenLevel, color: _color));
   }
 
   Future<FloowerState> readState() async {
@@ -709,6 +714,10 @@ class FloowerConnectorDemo extends FloowerConnector {
 
   Stream<int> subscribeBatteryLevel() {
     return Stream.value(75);
+  }
+
+  Stream<BatteryState> subscribeBatteryState() {
+    return Stream.value(BatteryState());
   }
 
   Future<void> disconnect() async {

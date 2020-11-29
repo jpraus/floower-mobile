@@ -37,7 +37,7 @@ class BleConnectInstructions extends StatelessWidget {
         Container(
           constraints: BoxConstraints(maxWidth: 400),
           padding: EdgeInsets.only(bottom: 18, left: 20, right: 20),
-          child: Text("Hold your Floower's leaf for 5 seconds until\nthe blossom starts flashing blue.", textAlign: TextAlign.center),
+          child: Text("Hold your Floower's leaf for 5 seconds\nuntil the blossom starts flashing blue.", textAlign: TextAlign.center),
         ),
         Container(
           width: imageSize,
