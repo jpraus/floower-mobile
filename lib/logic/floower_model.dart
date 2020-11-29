@@ -10,7 +10,6 @@ class FloowerModel extends ChangeNotifier {
 
   FloowerConnector _floowerConnector;
   bool _paired = false;
-  bool _detachAfterDisconnect = false;
   StreamSubscription _batteryLevelSubscription;
 
   Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
@@ -128,13 +127,14 @@ class FloowerModel extends ChangeNotifier {
     this._checkFloowerConnectorState();
   }
 
-  void disconnect() {
+  void disconnect() async {
     if (_floowerConnector != null) {
+      await _batteryLevelSubscription?.cancel();
       _floowerConnector.removeListener(_checkFloowerConnectorState);
-      _floowerConnector.disconnect();
+      await _floowerConnector.disconnect();
       _floowerConnector = null;
+      _colorsScheme = null;
       _paired = false;
-      _batteryLevelSubscription?.cancel();
       notifyListeners();
     }
   }
@@ -156,18 +156,19 @@ class FloowerModel extends ChangeNotifier {
     FloowerState state = await _floowerConnector.readState();
     _color = FloowerColor.fromHwColor(state.color);
     _petalsOpenLevel = state.petalsOpenLevel;
+    notifyListeners();
+
     _name = await _floowerConnector.readName();
     _touchThreshold = await _floowerConnector.readTouchThreshold();
     _serialNumber = await _floowerConnector.readSerialNumber();
     _modelName = await _floowerConnector.readModelName();
     _firmwareVersion = await _floowerConnector.readFirmwareVersion();
     _hardwareRevision = await _floowerConnector.readHardwareRevision();
+    notifyListeners();
 
     // battery level
-    _batteryLevelSubscription?.cancel();
+    await _batteryLevelSubscription?.cancel();
     _batteryLevelSubscription = _floowerConnector.subscribeBatteryLevel().listen(_onBatteryLevel);
-
-    notifyListeners();
   }
 
   void _onBatteryLevel(batteryLevel) {

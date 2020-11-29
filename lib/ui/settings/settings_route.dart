@@ -36,9 +36,9 @@ class _SettingsScreen extends StatelessWidget {
 
   void _onDisconnect(BuildContext context) async {
     PersistentStorage persistentStorage = Provider.of<PersistentStorage>(context, listen: false);
-    FloowerConnectorBle floowerConnectorBle = Provider.of<FloowerConnectorBle>(context, listen: false);
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context, listen: false);
 
-    await floowerConnectorBle.disconnect();
+    await floowerModel.disconnect();
     await persistentStorage.removePairedDevice();
     Navigator.popUntil(context, ModalRoute.withName(HomeRoute.ROUTE_NAME));
   }

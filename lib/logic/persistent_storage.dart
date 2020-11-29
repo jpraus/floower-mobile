@@ -18,7 +18,9 @@ class PersistentStorage extends ChangeNotifier {
   }
 
   String get pairedDevice {
-    print('Got previously paired device $_pairedDeviceId');
+    if (_pairedDeviceId != null) {
+      print('Got previously paired device $_pairedDeviceId');
+    }
     return _pairedDeviceId;
   }
 
