@@ -27,8 +27,8 @@ class HomeRoute extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: CupertinoTheme.of(context).brightness == Brightness.dark
-            ? Image.asset('assets/images/floower-logo-white.png', height: 18)
-            : Image.asset('assets/images/floower-logo-black.png', height: 18),
+            ? Image.asset('assets/images/floower-logo-dark.png', height: 18)
+            : Image.asset('assets/images/floower-logo-light.png', height: 18),
         trailing: floowerModel.connected
           ? GestureDetector(
             child: Icon(CupertinoIcons.gear),

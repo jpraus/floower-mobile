@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
@@ -17,36 +19,45 @@ class BleConnectInstructions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConnectLayout(
-      title: "Hold the Leaf",
-      image: Image(
-          fit: BoxFit.fitHeight,
-          image: AssetImage("assets/images/leaf.png")
-      ),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: 400),
-            padding: EdgeInsets.only(bottom: 18, left: 20, right: 20),
-            child: Text("Hold your Floower's leaf for 5 seconds until\nthe blossom starts flashing blue.", textAlign: TextAlign.center),
+    final MediaQueryData data = MediaQuery.of(context);
+    final double imageSize = max(data.size.height / 2, 200); // magic constant
+    final double topOffset = max((data.size.height - (imageSize + 200)) / 2, 70); // magic constant
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+            height: topOffset,
+            padding: EdgeInsets.only(bottom: 18),
+            alignment: Alignment.bottomCenter,
+            child: Text("Hold the Leaf", style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle)
+        ),
+        Container(
+          constraints: BoxConstraints(maxWidth: 400),
+          padding: EdgeInsets.only(bottom: 18, left: 20, right: 20),
+          child: Text("Hold your Floower's leaf for 5 seconds until\nthe blossom starts flashing blue.", textAlign: TextAlign.center),
+        ),
+        Container(
+          width: imageSize,
+          height: imageSize,
+          child: Image(
+            fit: BoxFit.fitHeight,
+            image: CupertinoTheme.of(context).brightness == Brightness.dark
+                ? AssetImage("assets/images/touch-floower-dark.jpg")
+                : AssetImage("assets/images/touch-floower-light.jpg")
           ),
-          CupertinoButton.filled(
-              child: Text("It's flashing now"),
-              onPressed: onStartScan
-          ),
-          CupertinoButton(
-              child: Text("Let me just play"),
-              onPressed: onDemo
-          )
-        ],
-      ),
-      animationBuilder: (centerOffset, imageSize) => _TouchHandAnimation(
-          centerOffset: centerOffset,
-          imageSize: imageSize,
-          duration: Duration(seconds: 2)
-      ),
+        ),
+        CupertinoButton.filled(
+            child: Text("It's flashing now"),
+            onPressed: onStartScan
+        ),
+        CupertinoButton(
+            child: Text("Let me just play"),
+            onPressed: onDemo
+        )
+      ],
     );
   }
 }
@@ -118,7 +129,7 @@ class _TouchHandAnimationState extends State<_TouchHandAnimation> with SingleTic
                       child: Transform.translate(
                           offset: Offset(_touchAnimation.value, _touchAnimation.value),
                           child: Image(
-                            image: AssetImage("assets/images/touch-hand.png"),
+                            image: AssetImage("assets/images/touch-floower-light.png"),
                           )
                       )
                   )
