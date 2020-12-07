@@ -475,8 +475,8 @@ class _MultipleTapDetector extends StatefulWidget {
 
 class _MultipleTapDetectorState extends State<_MultipleTapDetector> {
 
-  int tapCounter;
-  int oldTimestamp;
+  int tapCounter = 0;
+  int oldTimestamp = 0;
 
   void _onTap() {
     tapCounter = 0;
