@@ -26,9 +26,12 @@ class HomeRoute extends StatelessWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: WidgetsBinding.instance.window.platformBrightness == Brightness.dark
-            ? Image.asset('assets/images/floower-logo-dark.png', height: 18)
-            : Image.asset('assets/images/floower-logo-light.png', height: 18),
+        middle: _MultipleTapDetector(
+          child: WidgetsBinding.instance.window.platformBrightness == Brightness.dark
+              ? Image.asset('assets/images/floower-logo-dark.png', height: 18)
+              : Image.asset('assets/images/floower-logo-light.png', height: 18),
+          onTap: () => floowerModel.connect(FloowerConnectorDemo()),
+        ),
         trailing: floowerModel.connected
           ? GestureDetector(
             child: Icon(CupertinoIcons.gear),
@@ -451,5 +454,61 @@ class _AutoConnectState extends State<_AutoConnect> {
     else {
       return Container();
     }
+  }
+}
+
+class _MultipleTapDetector extends StatefulWidget {
+  Widget child;
+  int times;
+  Function onTap;
+
+  _MultipleTapDetector({
+    @required this.child,
+    this.times = 6,
+    @required this.onTap,
+    Key key
+  }) : super(key: key);
+
+  @override
+  _MultipleTapDetectorState createState() => _MultipleTapDetectorState();
+}
+
+class _MultipleTapDetectorState extends State<_MultipleTapDetector> {
+
+  int tapCounter;
+  int oldTimestamp;
+
+  void _onTap() {
+    tapCounter = 0;
+    oldTimestamp = 0;
+  }
+
+  void _onDoubleTap() {
+    int currentTimestamp = DateTime.now().millisecondsSinceEpoch;
+    if (tapCounter == 0) {
+      oldTimestamp = 0;
+    }
+    if (oldTimestamp == 0 || currentTimestamp - oldTimestamp < 450) {
+      tapCounter += 2;
+      oldTimestamp = currentTimestamp;
+      if (tapCounter == widget.times) {
+        tapCounter = 0;
+        oldTimestamp = 0;
+        if (widget.onTap != null) {
+          widget.onTap();
+        }
+      }
+    } else {
+      tapCounter = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _onTap,
+      onDoubleTap: _onDoubleTap,
+      child: widget.child
+    );
   }
 }
