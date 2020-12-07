@@ -19,19 +19,25 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Not using music information</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Need BLE permission</string>
+	<string>Using Bluetooth to connect and communicate with your Floower device</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Need BLE permission</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Need Location permission</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Need Location permission</string>
+	<string>Using Bluetooth to connect and communicate with your Floower device</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Not using calendar information</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Not using contact information</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Need Location permission</string>
+	<string>Using Location service is required for Bluetooth to work reliably with Floower device</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Not using motion detection</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Not using speech recognition</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

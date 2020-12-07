@@ -104,6 +104,7 @@ class _Floower extends StatelessWidget {
             ),
             Center(
               child: Image(
+                height: refHeight / 1.1,
                 image: floowerModel.connected
                   ? AssetImage("assets/images/floower-off.png")
                   : AssetImage("assets/images/floower-bw.png"),
