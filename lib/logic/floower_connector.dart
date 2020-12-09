@@ -251,17 +251,28 @@ class FloowerConnectorBle extends FloowerConnector {
       );
     }).catchError((e, stackTrace) {
       WriteError writeError;
+      String errorMessage;
       if (e.message is GenericFailure<CharacteristicValueUpdateError> && e.message.code == CharacteristicValueUpdateError.unknown) {
         writeError = WriteError.unknownCharacteristics;
+        errorMessage = "Not a Floower.\nPlease choose another device.";
+      }
+      else if (e.message is GenericFailure<WriteCharacteristicFailure> && e.message.code == WriteCharacteristicFailure.unknown) {
+        writeError = WriteError.unknownCharacteristics;
+        errorMessage = "Not a Floower.\nPlease choose another device.";
+      }
+      else if (e.message is GenericFailure) {
+        writeError = WriteError.generic;
+        errorMessage = e.message.message;
       }
       else {
         writeError = WriteError.generic;
+        errorMessage = e.message.toString();
       }
       print("Characteristics write error ${e.toString()}");
       print(stackTrace);
       return WriteResult(
         success: false,
-        errorMessage: e.message.toString(),
+        errorMessage: errorMessage,
         error: writeError
       );
     });
@@ -537,6 +548,7 @@ class FloowerConnectorBle extends FloowerConnector {
   }) async {
     _awaitConnectingStart = _connectionState != FloowerConnectionState.disconnected;
     _connectionState = FloowerConnectionState.connecting;
+    _connectionFailureMessage = null;
 
     await _deviceConnection?.cancel();
     _deviceConnection = _bleProvider.ble
@@ -568,11 +580,10 @@ class FloowerConnectorBle extends FloowerConnector {
 
   void _onConnectionChanged(ConnectionStateUpdate stateUpdate) {
     print("Connection update: ${stateUpdate.connectionState} ($_awaitConnectingStart)");
-    if (_awaitConnectingStart && stateUpdate.connectionState == DeviceConnectionState.connecting) {
+    if (_awaitConnectingStart && (stateUpdate.connectionState == DeviceConnectionState.connecting || stateUpdate.connectionState == DeviceConnectionState.connected)) {
       _awaitConnectingStart = false;
     }
     if (!_awaitConnectingStart) { // prevent updates while waiting for connecting to start
-      _awaitConnectingStart = false;
       switch (stateUpdate.connectionState) {
         case DeviceConnectionState.connected:
           if (_pairingColor == null) {
@@ -621,9 +632,8 @@ class FloowerConnectorBle extends FloowerConnector {
 
       _connectionState = FloowerConnectionState.pairing;
       notifyListeners();
+      print("Pairing device finished");
     }
-
-    print("Paired to device");
   }
 
   void pair() async {

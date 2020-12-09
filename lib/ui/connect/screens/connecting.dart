@@ -152,7 +152,7 @@ class FloowerConnectFailed extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: 18),
-            child: Text(message ?? "Cannot connect to selected Floower", style: CupertinoTheme.of(context).textTheme.textStyle),
+            child: Text(message ?? "Cannot connect to selected Floower", style: CupertinoTheme.of(context).textTheme.textStyle, textAlign: TextAlign.center),
           ),
           CupertinoButton.filled(
               child: Text("Try again"),

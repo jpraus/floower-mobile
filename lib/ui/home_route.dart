@@ -347,7 +347,7 @@ class _AutoConnect extends StatefulWidget {
 
 class _AutoConnectState extends State<_AutoConnect> {
 
-  bool _ready = false;
+  bool _wasReady = false;
   bool _connecting = false;
   bool _connectingFailed = false;
   bool _connected = false;
@@ -371,8 +371,8 @@ class _AutoConnectState extends State<_AutoConnect> {
   }
 
   void _onBleProviderChange() async {
-    if (widget.bleProvider.ready && !_ready) {
-      setState(() => _ready = true);
+    if (widget.bleProvider.ready && !_wasReady) {
+      setState(() => _wasReady = true);
       _tryConnect();
     }
   }
@@ -386,7 +386,7 @@ class _AutoConnectState extends State<_AutoConnect> {
   }
 
   void _tryConnect() async {
-    if (widget.floowerModel.disconnected) {
+    if (widget.floowerModel.disconnected && ModalRoute.of(context).isCurrent) {
       String deviceId = widget.persistentStorage.pairedDevice;
       if (deviceId != null) {
         print("Attempting connect to device $deviceId");
