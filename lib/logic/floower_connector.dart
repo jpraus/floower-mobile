@@ -80,6 +80,7 @@ abstract class FloowerConnector extends ChangeNotifier {
   Future<WriteResult> writeState({
     int openLevel,
     Color color,
+    int animation,
     Duration duration = const Duration(seconds: 1), // max 25s
   });
 
@@ -160,18 +161,20 @@ class FloowerConnectorBle extends FloowerConnector {
   Future<WriteResult> writeState({
     int openLevel,
     Color color,
+    int animation,
     Duration duration = const Duration(seconds: 1), // max 25s
   }) {
-    print("Writing state: petals=$openLevel% color=$color duration=$duration");
+    print("Writing state: petals=$openLevel% color=$color duration=$duration animation=$animation");
 
     // compute mode
     int mode = 0;
     mode += color != null ? 1 : 0;
     mode += openLevel != null ? 2 : 0;
+    mode += animation != null ? 4 : 0;
 
     // 6 bytes data packet
     List<int> value = List();
-    value.add(openLevel ?? 0);
+    value.add(openLevel ?? (animation ?? 0));
     value.add(color?.red ?? 0);
     value.add(color?.green ?? 0);
     value.add(color?.blue ?? 0);
@@ -661,6 +664,7 @@ class FloowerConnectorDemo extends FloowerConnector {
   Future<WriteResult> writeState({
     int openLevel,
     Color color,
+    int animation,
     Duration duration = const Duration(seconds: 1), // max 25s
   }) async {
     if (openLevel != null) {

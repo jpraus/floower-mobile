@@ -54,7 +54,15 @@ class FloowerModel extends ChangeNotifier {
     print("Change color to $color");
 
     _stateDebouncer.debounce(() {
-      _floowerConnector?.writeState(color: color.hwColor, duration: Duration(milliseconds: 100));
+      _floowerConnector?.writeState(color: color.hwColor, duration: Duration(milliseconds: 1000));
+    });
+  }
+
+  void playAnimation(int animation) {
+    print("Play animation $animation");
+
+    _stateDebouncer.debounce(() {
+      _floowerConnector?.writeState(animation: animation);
     });
   }
 

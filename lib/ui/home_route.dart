@@ -70,6 +70,10 @@ class _Floower extends StatelessWidget {
     Provider.of<FloowerModel>(context, listen: false).setColor(color);
   }
 
+  void _onAnimationPlay(BuildContext context, int animation) {
+    Provider.of<FloowerModel>(context, listen: false).playAnimation(animation);
+  }
+
   void _onPurchase() async {
     const url = 'https://floower.io';
     if (await canLaunch(url)) {
@@ -127,6 +131,7 @@ class _Floower extends StatelessWidget {
               child: _ColorPicker(
                 maxHeight: constraints.maxHeight - 28, // padding
                 onSelect: (color) => _onColorPickerChanged(context, color),
+                onPlay: (animation) => _onAnimationPlay(context, animation),
               ),
             ),
             Positioned(
@@ -202,8 +207,9 @@ class _ColorPicker extends StatelessWidget {
 
   final double maxHeight;
   final void Function(FloowerColor color) onSelect;
+  final void Function(int animation) onPlay;
 
-  _ColorPicker({this.maxHeight, this.onSelect});
+  _ColorPicker({this.maxHeight, this.onSelect, this.onPlay});
 
   @override
   Widget build(BuildContext context) {
@@ -217,13 +223,15 @@ class _ColorPicker extends StatelessWidget {
   }
 
   Widget _buildColorPicker(BuildContext context, AsyncSnapshot<List<FloowerColor>> snapshot) {
+    FloowerModel floowerModel = Provider.of<FloowerModel>(context, listen: false);
+
     if (!snapshot.hasData || snapshot.data.isEmpty) {
       return SizedBox(width: 0, height: 0);
     }
 
     Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
+    double circleSize = min(maxHeight / (snapshot.data.length + 2), 70);
 
-    double circleSize = min(maxHeight / (snapshot.data.length + 1), 70);
     List<Widget> items = snapshot.data.map((color) => GestureDetector(
       child: Container(
         width: circleSize - 8,
@@ -252,10 +260,58 @@ class _ColorPicker extends StatelessWidget {
       onTap: () => onSelect(FloowerColor.black)
     ));
 
+    if (floowerModel.firmwareVersion >= 6) {
+      items.add(GestureDetector(
+        child: Container(
+          width: circleSize - 8,
+          height: circleSize - 8,
+          margin: EdgeInsets.all(4),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor.withOpacity(0.4))
+          ),
+          child: Icon(Icons.play_arrow_rounded, color: borderColor),
+        ),
+        onTap: () => _showPicker(context)
+      ));
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: items,
     );
+  }
+
+  _showPicker(BuildContext context) {
+    final action = CupertinoActionSheet(
+      title: Text(
+        "Play Animation"
+      ),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          child: Text("Candle Light"),
+          onPressed: () {
+            this.onPlay(2);
+            Navigator.pop(context);
+          },
+        ),
+        CupertinoActionSheetAction(
+          child: Text("Rainbow"),
+          onPressed: () {
+            this.onPlay(1);
+            Navigator.pop(context);
+          },
+        )
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: Text("Cancel"),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+
+    showCupertinoModalPopup(context: context, builder: (context) => action);
   }
 }
 
