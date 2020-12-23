@@ -59,6 +59,9 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void playAnimation(int animation) {
+    _color = FloowerColor.black;
+    notifyListeners();
+
     print("Play animation $animation");
 
     _stateDebouncer.debounce(() {
