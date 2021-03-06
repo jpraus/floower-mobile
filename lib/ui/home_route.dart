@@ -74,16 +74,46 @@ class _Floower extends StatelessWidget {
     Provider.of<FloowerModel>(context, listen: false).playAnimation(animation);
   }
 
-  void _onPurchase() async {
+  void _onPurchase(BuildContext context) async {
     const url = 'https://floower.io';
     if (await canLaunch(url)) {
       await launch(url);
     }
   }
 
+  void _onUpgrade(BuildContext context) async {
+    const url = 'https://floower.io/upgrading-floower/';
+    if (await canLaunch(url)) {
+      await launch(url);
+    }
+  }
+
+  void _newVersionAvailable(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => new CupertinoAlertDialog(
+        title: Text("Upgrade Available"),
+        content: Text("Upgrade to your Floower is available. Do you want to upgrade your Floower to get the latest amazing features?"),
+        actions: <Widget>[
+          new CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: new Text("No")),
+          new CupertinoDialogAction(
+              onPressed: () {
+                _onUpgrade(context);
+                Navigator.of(context).pop(); // close
+              },
+              child: new Text("Yes"))
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     assert(debugCheckHasMediaQuery(context));
+
+    //_newVersionAvailable(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -191,7 +221,7 @@ class _Floower extends StatelessWidget {
                   ),
                   child: CupertinoButton(
                     child: Text("Get Floower"),
-                    onPressed: _onPurchase,
+                    onPressed: () => _onPurchase(context),
                   ),
                 )
               )
