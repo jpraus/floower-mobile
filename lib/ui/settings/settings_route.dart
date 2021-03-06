@@ -46,7 +46,7 @@ class _SettingsScreen extends StatelessWidget {
     showCupertinoModalBottomSheet(
       expand: true,
       context: context,
-      builder: (context, scrollController) => SettingNameDialog()
+      builder: (context) => SettingNameDialog()
     );
   }
 

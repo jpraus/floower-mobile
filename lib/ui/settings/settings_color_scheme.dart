@@ -55,7 +55,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       showCupertinoModalBottomSheet(
         expand: true,
         context: context,
-        builder: (context, scrollController) => _ColorPickerDialog(
+        builder: (context) => _ColorPickerDialog(
           floowerModel: widget.floowerModel,
           originalColor: color,
           colorPicked: (color) {
@@ -76,7 +76,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       showCupertinoModalBottomSheet(
         expand: true,
         context: context,
-        builder: (context, scrollController) => _ColorPickerDialog(
+        builder: (context) => _ColorPickerDialog(
           floowerModel: widget.floowerModel,
           colorPicked: (color) {
             setState(() {
