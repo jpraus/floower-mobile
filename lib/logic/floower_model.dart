@@ -24,10 +24,10 @@ class FloowerModel extends ChangeNotifier {
   int _touchThreshold;
 
   // read only
-  int _serialNumber;
+  int _serialNumber = 0;
   String _modelName = "";
-  int _firmwareVersion;
-  int _hardwareRevision;
+  int _firmwareVersion = 0;
+  int _hardwareRevision = 0;
   int _batteryLevel = -1; // -1 = unknown
   BatteryState _batteryState;
 
