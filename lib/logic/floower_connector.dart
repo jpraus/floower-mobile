@@ -81,7 +81,7 @@ abstract class FloowerConnector extends ChangeNotifier {
     int openLevel,
     Color color,
     int animation,
-    Duration duration = const Duration(seconds: 1), // max 25s
+    Duration transitionDuration = const Duration(seconds: 1), // max 25s
   });
 
   Future<WriteResult> writeName(String name);
@@ -162,9 +162,9 @@ class FloowerConnectorBle extends FloowerConnector {
     int openLevel,
     Color color,
     int animation,
-    Duration duration = const Duration(seconds: 1), // max 25s
+    Duration transitionDuration = const Duration(seconds: 1), // max 25s
   }) {
-    print("Writing state: petals=$openLevel% color=$color duration=$duration animation=$animation");
+    print("Writing state: petals=$openLevel% color=$color duration=$transitionDuration animation=$animation");
 
     // compute mode
     int mode = 0;
@@ -178,7 +178,7 @@ class FloowerConnectorBle extends FloowerConnector {
     value.add(color?.red ?? 0);
     value.add(color?.green ?? 0);
     value.add(color?.blue ?? 0);
-    value.add((duration.inMilliseconds / 100).round());
+    value.add((transitionDuration.inMilliseconds / 100).round());
     value.add(mode);
 
     return _writeCharacteristic(
@@ -623,7 +623,7 @@ class FloowerConnectorBle extends FloowerConnector {
     Duration transitionDuration = const Duration(milliseconds: 500);
 
     // try to send pairing command to change color and open a bit
-    WriteResult result = await writeState(openLevel: 20, color: _pairingColor, duration: transitionDuration);
+    WriteResult result = await writeState(openLevel: 20, color: _pairingColor, transitionDuration: transitionDuration);
     if (!result.success) {
       _connectionFailureMessage = result.errorMessage;
       await disconnect();
@@ -631,7 +631,7 @@ class FloowerConnectorBle extends FloowerConnector {
     else {
       // if success close again
       await new Future.delayed(transitionDuration);
-      await writeState(openLevel: 0, color: _pairingColor, duration: transitionDuration);
+      await writeState(openLevel: 0, color: _pairingColor, transitionDuration: transitionDuration);
 
       _connectionState = FloowerConnectionState.pairing;
       notifyListeners();
@@ -641,7 +641,7 @@ class FloowerConnectorBle extends FloowerConnector {
 
   void pair() async {
     if (_connectionState == FloowerConnectionState.pairing) {
-      await writeState(openLevel: 0, color: Colors.black, duration: Duration(milliseconds: 500)); // end pairing
+      await writeState(openLevel: 0, color: Colors.black, transitionDuration: Duration(milliseconds: 500)); // end pairing
       _connectionState = FloowerConnectionState.paired;
       notifyListeners();
     }
@@ -665,7 +665,7 @@ class FloowerConnectorDemo extends FloowerConnector {
     int openLevel,
     Color color,
     int animation,
-    Duration duration = const Duration(seconds: 1), // max 25s
+    Duration transitionDuration = const Duration(seconds: 1), // max 25s
   }) async {
     if (openLevel != null) {
       _petalsOpenLevel = openLevel;

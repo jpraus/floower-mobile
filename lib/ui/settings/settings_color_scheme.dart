@@ -5,12 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:dashed_container/dashed_container.dart';
+import 'package:flutter_xlider/flutter_xlider.dart';
 
 import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/cupertino_list.dart';
+import 'package:tinycolor/conversion.dart';
 import 'package:tinycolor/tinycolor.dart';
 
 class ColorSchemePicker extends StatefulWidget {
@@ -40,7 +41,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
     });
   }
 
-  void _onColorTap(FloowerColor color, int index) {
+  void _onColorTap(BuildContext context, FloowerColor color, int index) {
     if (_removing) {
       setState(() {
         _colorScheme.removeAt(index);
@@ -131,7 +132,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
         reorderable: true,
         key: ObjectKey(color),
         child: GestureDetector(
-          onTap: () => _onColorTap(color, i),
+          onTap: () => _onColorTap(context, color, i),
           onLongPress: _onColorLongPress,
           child: Container(
             width: 48,
@@ -235,14 +236,13 @@ class _ColorPickerDialog extends StatefulWidget {
 
 class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
-  HSVColor currentHsvColor = hslToHsv(HSLColor.fromAHSL(1, 180, 1, 0.5));
+  HslColor _currentHslColor = FloowerColor.COLOR_RED.displayHSLColor;
 
   @override
   void initState() {
     super.initState();
     if (widget.originalColor != null) {
-      currentHsvColor = HSVColor.fromColor(widget.originalColor.displayColor);
-      _showColor(currentHsvColor.toColor());
+      _currentHslColor = widget.originalColor.displayHSLColor;
     }
   }
 
@@ -250,7 +250,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   void didUpdateWidget(_ColorPickerDialog oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.originalColor != null) {
-      currentHsvColor = HSVColor.fromColor(widget.originalColor.displayColor);
+      _currentHslColor = widget.originalColor.displayHSLColor;
     }
   }
 
@@ -261,7 +261,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
   void _onSave(BuildContext context) async {
     _showColor(Colors.black);
-    widget.colorPicked(FloowerColor.fromDisplayColor(currentHsvColor.toColor()));
+    widget.colorPicked(FloowerColor.fromDisplayColor(hslToRgb(_currentHslColor)));
     Navigator.pop(context);
   }
 
@@ -270,26 +270,25 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
     Navigator.pop(context);
   }
 
-  void _onChangeColor(HSVColor color) {
-    color = hslToHsv(hsvToHsl(color).withSaturation(1));
-    setState(() => currentHsvColor = color);
-    _showColor(color.toColor());
+  void _onChangeColor(HslColor color) {
+    setState(() => _currentHslColor = color);
+    _showColor(hslToRgb(_currentHslColor));
   }
 
-  void _showColor(Color color) {
-    widget.floowerModel.setColor(FloowerColor.fromDisplayColor(color));
+  Future<void> _showColor(Color color) async {
+    widget.floowerModel.setColor(FloowerColor.fromDisplayColor(color), transitionDuration: Duration(milliseconds: 500), notifyListener: false);
   }
 
   @override
   Widget build(BuildContext context) {
-    TinyColor currentColor = TinyColor.fromHSV(currentHsvColor);
-
+    Color currentColor = hslToRgb(_currentHslColor);
     Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
     List<Widget> defaultColors = [];
 
+    /*
     for (FloowerColor color in FloowerColor.DEFAULT_SCHEME) {
       defaultColors.add(GestureDetector(
-        onTap: () => _onChangeColor(color.displayHSVColor),
+        onTap: () => _onChangeColor(color.displayHSVColor, true),
         child: Container(
           width: 48,
           height: 48,
@@ -301,65 +300,135 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
         ),
       ));
     }
+    */
 
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
         backgroundColor: CupertinoTheme.of(context).barBackgroundColor,
         body: LayoutBuilder(
-          builder: (context, constraints) {
-            return CustomScrollView(
-              slivers: <Widget>[
-                new CupertinoSliverNavigationBar(
-                  largeTitle: Text(widget.originalColor == null ? "Add New Color" : "Edit Color"),
-                  leading: GestureDetector(
-                    onTap: () => _onCancel(context),
-                    child: Icon(CupertinoIcons.clear_thick, color: CupertinoTheme.of(context).textTheme.textStyle.color),
+            builder: (context, constraints) {
+              return CustomScrollView(
+                slivers: <Widget>[
+                  new CupertinoSliverNavigationBar(
+                    largeTitle: Text(widget.originalColor == null ? "Add New Color" : "Edit Color"),
+                    leading: GestureDetector(
+                      onTap: () => _onCancel(context),
+                      child: Icon(CupertinoIcons.clear_thick, color: CupertinoTheme.of(context).textTheme.textStyle.color),
+                    ),
                   ),
-                  /*trailing: GestureDetector(
-                    onTap: () => _onSave(context),
-                    child: Icon(CupertinoIcons.check_mark_circled_solid),
-                  ),*/
-                ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    Container(
-                        padding: EdgeInsets.symmetric(horizontal: 25, vertical: 40),
-                        child: Wrap(
-                          children: defaultColors,
-                          spacing: 16,
-                          runSpacing: 16,
+                  SliverList(
+                    delegate: SliverChildListDelegate([
+                      Container(
+                        padding: EdgeInsets.only(left: 15, top: 25, bottom: 10),
+                        child: Text("Hue"),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: FlutterSlider(
+                          values: [_currentHslColor.h],
+                          max: 360.0,
+                          min: 0,
+                          onDragging: (handlerIndex, lowerValue, upperValue) {
+                            _onChangeColor(HslColor(h: lowerValue, l: _currentHslColor.l, s: 1.0, a: 255.0));
+                          },
+                          handler: FlutterSliderHandler(
+                            decoration: BoxDecoration(
+                              boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
+                              color: HSVColor.fromAHSV(1.0, _currentHslColor.h, 1.0, 1.0).toColor(),
+                              shape: BoxShape.circle
+                            ),
+                            child: Container()
+                          ),
+                          handlerAnimation: FlutterSliderHandlerAnimation(
+                            curve: Curves.elasticOut,
+                            reverseCurve: Curves.bounceIn,
+                            duration: Duration(milliseconds: 500),
+                            scale: 1.5
+                          ),
+                          trackBar: FlutterSliderTrackBar(
+                            inactiveTrackBar: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              color: Colors.white, // opacity 1
+                              gradient: LinearGradient(
+                                colors: [
+                                  const HSVColor.fromAHSV(1.0, 0.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 60.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 120.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 180.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 240.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 300.0, 1.0, 1.0).toColor(),
+                                  const HSVColor.fromAHSV(1.0, 360.0, 1.0, 1.0).toColor()
+                                ]
+                              )
+                            ),
+                            activeTrackBarHeight: 10,
+                            inactiveTrackBarHeight: 10,
+                            activeTrackBar: BoxDecoration(
+                              color: Colors.transparent,
+                            )
+                          ),
                         )
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      height: 100,
-                      child: ColorPickerSlider(
-                        TrackType.hue,
-                        currentHsvColor,
-                        _onChangeColor,
-                        displayThumbColor: true,
-                      )
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      height: 100,
-                      child: ColorPickerSlider(
-                        TrackType.lightness,
-                        currentHsvColor,
-                        _onChangeColor,
-                        displayThumbColor: true,
-                      )
-                    ),
-                  ]),
-                )
-              ],
-            );
-          }
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(left: 15, top: 25, bottom: 10),
+                        child: Text("Lightness"),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: FlutterSlider(
+                          values: [_currentHslColor.l],
+                          max: 1.0,
+                          min: 0,
+                          step: FlutterSliderStep(
+                            step: 0.01
+                          ),
+                          onDragging: (handlerIndex, lowerValue, upperValue) {
+                            _onChangeColor(HslColor(h: _currentHslColor.h, l: lowerValue, s: 1.0, a: 255.0));
+                          },
+                          handler: FlutterSliderHandler(
+                            decoration: BoxDecoration(
+                              boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
+                              color: currentColor,
+                              shape: BoxShape.circle
+                            ),
+                            child: Container()
+                          ),
+                          handlerAnimation: FlutterSliderHandlerAnimation(
+                            curve: Curves.elasticOut,
+                            reverseCurve: Curves.bounceIn,
+                            duration: Duration(milliseconds: 500),
+                            scale: 1.5
+                          ),
+                          trackBar: FlutterSliderTrackBar(
+                            inactiveTrackBar: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              color: Colors.white, // opacity 1
+                              gradient: LinearGradient(
+                                colors: [
+                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 0.0).toColor(),
+                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 0.5).toColor(),
+                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 1.0).toColor(),
+                                ]
+                              )
+                            ),
+                            activeTrackBarHeight: 10,
+                            inactiveTrackBarHeight: 10,
+                            activeTrackBar: BoxDecoration(
+                              color: Colors.transparent,
+                            )
+                          ),
+                        )
+                      ),
+                    ]),
+                  )
+                ],
+              );
+            }
         ),
         floatingActionButton: FloatingActionButton(
-          child: Icon(CupertinoIcons.right_chevron, color: currentColor.isLight() ? Colors.black : Colors.white),
-          backgroundColor: currentHsvColor.toColor(),
+          //child: Icon(CupertinoIcons.right_chevron, color: currentColor.isLight() ? Colors.black : Colors.white),
+          backgroundColor: currentColor,
           onPressed: () => _onSave(context),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

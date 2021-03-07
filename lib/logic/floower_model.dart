@@ -12,7 +12,7 @@ class FloowerModel extends ChangeNotifier {
   StreamSubscription _batteryLevelSubscription;
   StreamSubscription _batteryStateSubscription;
 
-  Debouncer _stateDebouncer = Debouncer(duration: Duration(milliseconds: 200));
+  Throttler _stateTrottler = Throttler(timeout: Duration(milliseconds: 500));
   Debouncer _touchThresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
   Debouncer _colorSchemeDebouncer = Debouncer(duration: Duration(seconds: 1));
 
@@ -47,14 +47,19 @@ class FloowerModel extends ChangeNotifier {
   FloowerConnectionState get connectionState => _floowerConnector != null ? _floowerConnector.state : FloowerConnectionState.disconnected;
   bool get demo => _floowerConnector?.demo == true;
 
-  void setColor(FloowerColor color) {
+  void setColor(FloowerColor color, {
+      Duration transitionDuration = const Duration(milliseconds: 1000),
+      notifyListener = true
+  }) {
     _color = color;
-    notifyListeners();
+    if (notifyListener) {
+      notifyListeners();
+    }
 
     print("Change color to $color");
 
-    _stateDebouncer.debounce(() {
-      _floowerConnector?.writeState(color: color.hwColor, duration: Duration(milliseconds: 1000));
+    _stateTrottler.throttle(() {
+      _floowerConnector?.writeState(color: color.hwColor, transitionDuration: transitionDuration);
     });
   }
 
@@ -64,7 +69,7 @@ class FloowerModel extends ChangeNotifier {
 
     print("Play animation $animation");
 
-    _stateDebouncer.debounce(() {
+    _stateTrottler.throttle(() {
       _floowerConnector?.writeState(animation: animation);
     });
   }
@@ -99,25 +104,25 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void openPetals() {
-    _stateDebouncer.debounce(() {
-      _floowerConnector?.writeState(openLevel: 100, duration: Duration(seconds: 5));
+    _stateTrottler.throttle(() {
+      _floowerConnector?.writeState(openLevel: 100, transitionDuration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 100;
   }
 
   void closePetals() {
-    _stateDebouncer.debounce(() {
-      _floowerConnector?.writeState(openLevel: 0, duration: Duration(seconds: 5));
+    _stateTrottler.throttle(() {
+      _floowerConnector?.writeState(openLevel: 0, transitionDuration: Duration(seconds: 5));
     });
     _petalsOpenLevel = 0;
   }
 
   void togglePetals() {
-    _stateDebouncer.debounce(() async {
+    _stateTrottler.throttle(() async {
       FloowerState currentState = await _floowerConnector?.readState();
       if (currentState != null) {
         int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : 100;
-        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.hwColor, duration: Duration(seconds: 5));
+        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.hwColor, transitionDuration: Duration(seconds: 5));
       }
     });
   }
@@ -220,7 +225,6 @@ class FloowerModel extends ChangeNotifier {
 
 class Debouncer {
   final Duration duration;
-  VoidCallback action;
   Timer _timer;
 
   Debouncer({ this.duration });
@@ -228,5 +232,23 @@ class Debouncer {
   debounce(VoidCallback action) {
     _timer?.cancel();
     _timer = Timer(duration, action);
+  }
+}
+
+class Throttler {
+
+  final Duration timeout;
+  VoidCallback _action;
+  Timer _timer;
+
+  Throttler({ this.timeout });
+
+  throttle(VoidCallback action) {
+    _action = action;
+    if (_timer == null || !_timer.isActive) {
+      _timer = Timer(timeout, () {
+        _action.call();
+      });
+    }
   }
 }
