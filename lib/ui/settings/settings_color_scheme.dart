@@ -14,6 +14,8 @@ import 'package:Floower/ui/cupertino_list.dart';
 import 'package:tinycolor/conversion.dart';
 import 'package:tinycolor/tinycolor.dart';
 
+import '../commons.dart';
+
 class ColorSchemePicker extends StatefulWidget {
   FloowerModel floowerModel;
 
@@ -69,6 +71,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           }
         )
       );
+      widget.floowerModel.setColor(color);
     }
   }
 
@@ -88,6 +91,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           }
         )
       );
+      widget.floowerModel.setColor(FloowerColor.COLOR_RED);
     }
   }
 
@@ -112,6 +116,36 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
     setState(() {
       FloowerColor color = _colorScheme.removeAt(oldIndex);
       _colorScheme.insert(newIndex, color);
+    });
+    // upload to Floower
+    widget.floowerModel.setColorScheme(_colorScheme);
+  }
+
+  void _onResetScheme(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => new CupertinoAlertDialog(
+        title: Text("Reset Color Scheme"),
+        content: Text("Do you want to reset your Floower's color scheme to the standard one?"),
+        actions: <Widget>[
+          new CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: new Text("No")),
+          new CupertinoDialogAction(
+            onPressed: () {
+              _resetScheme();
+              Navigator.of(context).pop(); // close
+            },
+            child: new Text("Yes"))
+        ],
+      ),
+    );
+  }
+
+  void _resetScheme() async {
+    setState(() {
+      _colorScheme = []..addAll(FloowerColor.DEFAULT_SCHEME);
+      _removing = false;
     });
     // upload to Floower
     widget.floowerModel.setColorScheme(_colorScheme);
@@ -142,7 +176,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
               color: color.displayColor,
               border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0)),
             ),
-            child: _removing ? Icon(CupertinoIcons.clear_thick, color: color.isLight() ? Colors.black : Colors.white) : null
+            child: _removing ? Icon(CupertinoIcons.clear_thick, size: 20, color: color.isLight() ? Colors.black : Colors.white) : null
           ),
         ),
       ));
@@ -161,7 +195,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
               shape: BoxShape.circle,
               color: CupertinoColors.activeBlue
             ),
-            child: Icon(CupertinoIcons.check_mark, size: 40, color: CupertinoColors.white),
+            child: Icon(CupertinoIcons.check_mark, color: CupertinoColors.white),
           ),
         ),
       ));
@@ -179,7 +213,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle
               ),
-              child: Icon(CupertinoIcons.add, size: 40),
+              child: Icon(CupertinoIcons.add),
             ),
             dashColor: borderColor.withOpacity(0.2),
             boxShape: BoxShape.circle,
@@ -193,7 +227,20 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
 
     return CupertinoList(
       margin: EdgeInsets.only(top: 35),
-      heading: Text("Color Scheme"),
+      heading: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            child: Text("Color Scheme")
+          ),
+          GestureDetector(
+            onTap: () => _onResetScheme(context),
+            child: Icon(CupertinoIcons.restart, size: 20, color: FloowerTextTheme.secondaryColor())
+          ),
+        ],
+      ),
+
+
       children: [Container(
         width: double.infinity,
         padding: EdgeInsets.all(18),
@@ -281,26 +328,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    Color currentColor = hslToRgb(_currentHslColor);
-    Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
-    List<Widget> defaultColors = [];
-
-    /*
-    for (FloowerColor color in FloowerColor.DEFAULT_SCHEME) {
-      defaultColors.add(GestureDetector(
-        onTap: () => _onChangeColor(color.displayHSVColor, true),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.displayColor,
-            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0)),
-          ),
-        ),
-      ));
-    }
-    */
+    TinyColor currentColor = TinyColor.fromHSL(_currentHslColor);
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -389,7 +417,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                           handler: FlutterSliderHandler(
                             decoration: BoxDecoration(
                               boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
-                              color: currentColor,
+                              color: currentColor.color,
                               shape: BoxShape.circle
                             ),
                             child: Container()
@@ -420,18 +448,20 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                           ),
                         )
                       ),
+                      Container(
+                        padding: EdgeInsets.only(left: 15, right: 15, top: 30),
+                        child: CupertinoButton(
+                          child: Text("Use Color", style: TextStyle(color: currentColor.isLight() ? Colors.black : Colors.white)),
+                          color: currentColor.color,
+                          onPressed: () => _onSave(context)
+                        ),
+                      ),
                     ]),
                   )
                 ],
               );
             }
         ),
-        floatingActionButton: FloatingActionButton(
-          //child: Icon(CupertinoIcons.right_chevron, color: currentColor.isLight() ? Colors.black : Colors.white),
-          backgroundColor: currentColor,
-          onPressed: () => _onSave(context),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }

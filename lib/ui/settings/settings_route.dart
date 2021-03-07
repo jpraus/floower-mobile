@@ -136,15 +136,8 @@ class _SettingsScreen extends StatelessWidget {
       ],
     ));
 
-    return Localizations(
-      locale: const Locale('en', 'US'),
-      delegates: <LocalizationsDelegate<dynamic>>[
-        DefaultWidgetsLocalizations.delegate,
-        DefaultMaterialLocalizations.delegate,
-      ],
-      child: ListView(
-        children: column
-      )
+    return ListView(
+      children: column
     );
   }
 }

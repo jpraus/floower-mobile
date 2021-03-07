@@ -173,6 +173,7 @@ class FloowerModel extends ChangeNotifier {
 
   void _onFloowerPaired() async {
     print("Loading Floower Information");
+    _colorsScheme = null; // force loading of the color scheme (lazy)
 
     FloowerState state = await _floowerConnector.readState();
     if (state != null) {

@@ -43,6 +43,11 @@ void main() {
           //brightness: Brightness.dark
           //brightness: Brightness.light
         ),
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+          DefaultMaterialLocalizations.delegate,
+          DefaultCupertinoLocalizations.delegate,
+          DefaultWidgetsLocalizations.delegate,
+        ],
         debugShowCheckedModeBanner: false,
         initialRoute: HomeRoute.ROUTE_NAME,
         routes: {
