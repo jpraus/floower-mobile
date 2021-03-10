@@ -85,16 +85,6 @@ class _SettingsScreen extends StatelessWidget {
             ],
           ),
         ),*/
-        CupertinoListItem(
-          title: Text("Touch Sensitivity"),
-        ),
-        CupertinoListItem(
-          leading: Text("Low", style: FloowerTextTheme.secondaryLabel(context)),
-          title: TouchSensitivitySlider(
-            floowerModel: floowerModel,
-          ),
-          trailing: Text("High", style: FloowerTextTheme.secondaryLabel(context)),
-        )
       ],
     ));
 
@@ -102,6 +92,91 @@ class _SettingsScreen extends StatelessWidget {
     column.add(ColorSchemePicker(
       floowerModel: floowerModel,
     ));
+
+    // about sections
+    if (floowerModel.firmwareVersion >= 7) {
+      column.add(CupertinoList(
+          margin: EdgeInsets.only(top: 35),
+          heading: Text("Customization"),
+          children: [
+            CupertinoListItem(
+              title: Text("Light Intensity"),
+              paddingBottom: 11,
+            ),
+            CupertinoListItem(
+              paddingTop: 0,
+              leading: Icon(CupertinoIcons.sun_min,
+                  color: FloowerTextTheme.secondaryColor()),
+              title: PersonificationSlider(
+                min: 5,
+                max: 100,
+                divisions: 95,
+                value: floowerModel.lightIntensity?.toDouble(),
+                onChanged: (value) =>
+                    floowerModel.setLightIntensity(value.toInt()),
+              ),
+              trailing: Icon(CupertinoIcons.sun_max_fill,
+                  color: FloowerTextTheme.secondaryColor()),
+            ),
+            CupertinoListItem(
+              title: Text("Speed"),
+              paddingBottom: 11,
+            ),
+            CupertinoListItem(
+              paddingTop: 0,
+              leading: Text(
+                  "Fast", style: FloowerTextTheme.secondaryLabel(context)),
+              title: PersonificationSlider(
+                min: 5,
+                max: 100,
+                divisions: 95,
+                value: floowerModel.speed?.toDouble(),
+                onChanged: (value) => floowerModel.setSpeed(value.toInt()),
+              ),
+              trailing: Text(
+                  "Slow", style: FloowerTextTheme.secondaryLabel(context)),
+            ),
+            CupertinoListItem(
+              title: Text("Blossom Opened Size"),
+              paddingBottom: 11,
+            ),
+            CupertinoListItem(
+              paddingTop: 0,
+              leading: Text(
+                  "5%", style: FloowerTextTheme.secondaryLabel(context)),
+              title: PersonificationSlider(
+                min: 10,
+                max: 100,
+                divisions: 18,
+                value: floowerModel.maxOpenLevel?.toDouble(),
+                onChanged: (value) =>
+                    floowerModel.setMaxOpenLevel(value.toInt()),
+              ),
+              trailing: Text(
+                  "100%", style: FloowerTextTheme.secondaryLabel(context)),
+            ),
+            CupertinoListItem(
+              title: Text("Touch Sensitivity"),
+              paddingBottom: 11,
+            ),
+            CupertinoListItem(
+              paddingTop: 0,
+              leading: Text(
+                  "Low", style: FloowerTextTheme.secondaryLabel(context)),
+              title: PersonificationSlider(
+                min: 40,
+                max: 50,
+                divisions: 10,
+                value: floowerModel.touchThreshold?.toDouble(),
+                onChanged: (value) =>
+                    floowerModel.setTouchThreshold(value.toInt()),
+              ),
+              trailing: Text(
+                  "High", style: FloowerTextTheme.secondaryLabel(context)),
+            ),
+          ]
+      ));
+    }
 
     // about sections
     column.add(CupertinoList(
@@ -142,45 +217,34 @@ class _SettingsScreen extends StatelessWidget {
   }
 }
 
-class TouchSensitivitySlider extends StatefulWidget {
+class PersonificationSlider extends StatelessWidget {
 
-  final FloowerModel floowerModel;
+  final double min;
+  final double max;
+  final double value;
+  final int divisions;
+  final ValueChanged<double> onChanged;
 
-  TouchSensitivitySlider({ @required this.floowerModel });
-
-  @override
-  _TouchSensitivitySliderState createState() => _TouchSensitivitySliderState();
-}
-
-class _TouchSensitivitySliderState extends State<TouchSensitivitySlider> {
-
-  double _value;
-
-  @override
-  void initState() {
-    _value = widget.floowerModel.touchThreshold?.toDouble();
-    super.initState();
-  }
-
-  void _onChanged(double value) {
-    setState(() {
-      _value = value;
-    });
-    widget.floowerModel.setTouchThreshold(value.toInt());
-  }
+  PersonificationSlider({
+    this.min,
+    this.max,
+    this.value,
+    this.divisions,
+    this.onChanged
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (_value == null) {
+    if (value == null) {
       return SizedBox();
     }
 
     return CupertinoSlider(
-      value: _value,
-      onChanged: _onChanged,
-      min: 40,
-      max: 50,
-      divisions: 20,
+      value: value,
+      onChanged: onChanged,
+      min: min,
+      max: max,
+      divisions: divisions,
     );
   }
 }

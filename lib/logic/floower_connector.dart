@@ -24,6 +24,16 @@ class FloowerState {
   bool operator ==(o) => o is FloowerState && petalsOpenLevel == o.petalsOpenLevel && color == o.color;
 }
 
+class PersonificationSettings {
+  int touchThreshold;
+  int behavior;
+  int speed;
+  int maxOpenLevel;
+  int lightIntensity;
+  PersonificationSettings({this.touchThreshold, this.behavior, this.speed, this.maxOpenLevel, this.lightIntensity});
+  String toString() => "(touchThreshold=$touchThreshold behavior=$behavior speed=$speed maxOpenLevel=$maxOpenLevel lightIntensity=$lightIntensity)";
+}
+
 enum WriteError {
   generic,
   disconnected,
@@ -86,7 +96,7 @@ abstract class FloowerConnector extends ChangeNotifier {
 
   Future<WriteResult> writeName(String name);
 
-  Future<WriteResult> writeTouchThreshold(int touchThreshold);
+  Future<WriteResult> writePersonification(PersonificationSettings personificationSettings);
 
   Future<WriteResult> writeColorScheme({List<Color> colorScheme});
 
@@ -96,7 +106,7 @@ abstract class FloowerConnector extends ChangeNotifier {
 
   Future<String> readName();
 
-  Future<int> readTouchThreshold();
+  Future<PersonificationSettings> readPersonification();
 
   Future<String> readModelName();
 
@@ -138,7 +148,7 @@ class FloowerConnectorBle extends FloowerConnector {
   final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B), RO
   final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode), WO
   final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
-  final Uuid FLOOWER_TOUCH_THRESHOLD_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // touch threshold 1 byte
+  final Uuid FLOOWER_PERSONIFICATION_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // 5 bytes as for now, personification of the Floower (touchThreshold, behavior, speed, maxOpenLevel, lightIntensity)
 
   final BleProvider _bleProvider;
 
@@ -173,7 +183,7 @@ class FloowerConnectorBle extends FloowerConnector {
     mode += animation != null ? 4 : 0;
 
     // 6 bytes data packet
-    List<int> value = List();
+    List<int> value = [];
     value.add(openLevel ?? (animation ?? 0));
     value.add(color?.red ?? 0);
     value.add(color?.green ?? 0);
@@ -203,15 +213,30 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   @override
-  Future<WriteResult> writeTouchThreshold(int touchThreshold) {
-    if (touchThreshold < 30 && touchThreshold > 60) {
-      throw ValueException(message: "Invalid touch threshold value");
+  Future<WriteResult> writePersonification(PersonificationSettings personificationSettings) {
+    if (personificationSettings.touchThreshold < 30 && personificationSettings.touchThreshold > 60) {
+      throw ValueException(message: "Invalid touch threshold value [30,60]");
+    }
+    if (personificationSettings.speed < 5 && personificationSettings.speed > 255) {
+      throw ValueException(message: "Invalid speed value [0,255]");
+    }
+    if (personificationSettings.maxOpenLevel < 10 && personificationSettings.maxOpenLevel > 100) {
+      throw ValueException(message: "Invalid speed value [10,100]");
+    }
+    if (personificationSettings.lightIntensity < 10 && personificationSettings.lightIntensity > 100) {
+      throw ValueException(message: "Invalid speed value [10,100]");
     }
 
     return _writeCharacteristic(
         serviceId: FLOOWER_SERVICE_UUID,
-        characteristicId: FLOOWER_TOUCH_THRESHOLD_UUID,
-        value: [touchThreshold]
+        characteristicId: FLOOWER_PERSONIFICATION_UUID,
+        value: [
+          personificationSettings.touchThreshold,
+          personificationSettings.behavior,
+          personificationSettings.speed,
+          personificationSettings.maxOpenLevel,
+          personificationSettings.lightIntensity
+        ]
     );
   }
 
@@ -338,18 +363,24 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   @override
-  Future<int> readTouchThreshold() {
+  Future<PersonificationSettings> readPersonification() {
     return _readCharacteristics(
         serviceId: FLOOWER_SERVICE_UUID,
-        characteristicId: FLOOWER_TOUCH_THRESHOLD_UUID
+        characteristicId: FLOOWER_PERSONIFICATION_UUID
     ).then((value) {
-      int touchThreshold = value[0];
-      print("Got touch threshold '$touchThreshold'");
-      return touchThreshold;
+      PersonificationSettings personification = PersonificationSettings(
+        touchThreshold: value[0],
+        behavior: value[1] ?? 0,
+        speed: value[2] ?? 0,
+        maxOpenLevel: value[3] ?? 0,
+        lightIntensity: value[4] ?? 0,
+      );
+      print("Got personification settings '$personification'");
+      return personification;
     }).catchError((e, stackTrace) {
-      print("Failed to get touch threshold: ${e.toString()}");
+      print("Failed to get personification settings: ${e.toString()}");
       print(stackTrace);
-      return "";
+      return null;
     });
   }
 
@@ -381,7 +412,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get serial number: ${e.toString()}");
       print(stackTrace);
-      return "";
+      return 0;
     });
   }
 
@@ -397,7 +428,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get hardware revision: ${e.toString()}");
       print(stackTrace);
-      return "";
+      return 0;
     });
   }
 
@@ -413,7 +444,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get firmware revision: ${e.toString()}");
       print(stackTrace);
-      return "";
+      return 0;
     });
   }
 
@@ -442,7 +473,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get color scheme: ${e.toString()}");
       print(stackTrace);
-      return List<Color>();
+      return [];
     });
   }
 
@@ -655,7 +686,13 @@ class FloowerConnectorDemo extends FloowerConnector {
   Color _color = FloowerColor.black.hwColor;
   List<Color> _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME).map((color) => color.hwColor).toList();
   String _name = "Floower Demo";
-  int _touchThreshold = 45;
+  PersonificationSettings _personificationSettings = PersonificationSettings(
+    touchThreshold: 45,
+    behavior: 0,
+    speed: 50,
+    maxOpenLevel: 100,
+    lightIntensity: 70
+  );
 
   FloowerConnectionState get state => _paired ? FloowerConnectionState.paired : FloowerConnectionState.disconnected;
   bool get demo => true;
@@ -683,8 +720,8 @@ class FloowerConnectorDemo extends FloowerConnector {
     return WriteResult(success: true);
   }
 
-  Future<WriteResult> writeTouchThreshold(int touchThreshold) async {
-    _touchThreshold = touchThreshold;
+  Future<WriteResult> writePersonification(PersonificationSettings personificationSettings) async {
+    _personificationSettings = personificationSettings;
     notifyListeners();
     return WriteResult(success: true);
   }
@@ -707,8 +744,8 @@ class FloowerConnectorDemo extends FloowerConnector {
     return _name;
   }
 
-  Future<int> readTouchThreshold() async {
-    return _touchThreshold;
+  Future<PersonificationSettings> readPersonification() async {
+    return _personificationSettings;
   }
 
   Future<String> readModelName() async {
@@ -724,7 +761,7 @@ class FloowerConnectorDemo extends FloowerConnector {
   }
 
   Future<int> readFirmwareVersion() async {
-    return 4;
+    return 7;
   }
 
   Future<List<Color>> readColorsScheme() async {

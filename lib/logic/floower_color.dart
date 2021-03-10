@@ -33,7 +33,7 @@ class FloowerColor {
   Color get displayColor => _displayColor.color;
   HSVColor get displayHSVColor => _displayColor.toHsv();
   HslColor get displayHSLColor => _displayColor.toHsl();
-  Color get hwColor => _displayColor.brighten(-INTENSITY_SHIFT).color; // intensity down by 30% so it's nice on the display
+  Color get hwColor => _displayColor.darken(INTENSITY_SHIFT).color; // intensity down by 30% so it's nice on the display
 
   bool isBlack() {
     return _displayColor.getBrightness() == 0;

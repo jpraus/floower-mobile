@@ -13,7 +13,7 @@ class FloowerModel extends ChangeNotifier {
   StreamSubscription _batteryStateSubscription;
 
   Throttler _stateTrottler = Throttler(timeout: Duration(milliseconds: 500));
-  Debouncer _touchThresholdDebouncer = Debouncer(duration: Duration(seconds: 1));
+  Debouncer _personificationDebouncer = Debouncer(duration: Duration(seconds: 1));
   Debouncer _colorSchemeDebouncer = Debouncer(duration: Duration(seconds: 1));
 
   // read/write
@@ -21,7 +21,7 @@ class FloowerModel extends ChangeNotifier {
   FloowerColor _color = FloowerColor.black;
   List<FloowerColor> _colorsScheme; // max 10 colos
   String _name = "";
-  int _touchThreshold;
+  PersonificationSettings _personification;
 
   // read only
   int _serialNumber = 0;
@@ -33,7 +33,11 @@ class FloowerModel extends ChangeNotifier {
 
   FloowerColor get color => _color;
   String get name => _name;
-  int get touchThreshold => _touchThreshold;
+  int get touchThreshold => _personification?.touchThreshold;
+  int get behavior => _personification?.behavior;
+  int get speed => _personification?.speed;
+  int get maxOpenLevel => _personification?.maxOpenLevel;
+  int get lightIntensity => _personification?.lightIntensity;
   int get serialNumber => _serialNumber;
   String get modelName => _modelName;
   int get firmwareVersion => _firmwareVersion;
@@ -93,14 +97,51 @@ class FloowerModel extends ChangeNotifier {
   }
 
   void setTouchThreshold(int touchThreshold) {
-    _touchThreshold = touchThreshold;
-    notifyListeners();
+    if (_personification != null) {
+      _personification.touchThreshold = touchThreshold;
+      notifyListeners();
+      print("Change touch threshold to $touchThreshold");
 
-    print("Change touch threshold to $touchThreshold");
+      _personificationDebouncer.debounce(() {
+        _floowerConnector?.writePersonification(_personification);
+      });
+    }
+  }
 
-    _touchThresholdDebouncer.debounce(() {
-      _floowerConnector?.writeTouchThreshold(touchThreshold);
-    });
+  void setSpeed(int speed) {
+    if (_personification != null) {
+      _personification.speed = speed;
+      notifyListeners();
+      print("Change speed to $speed");
+
+      _personificationDebouncer.debounce(() {
+        _floowerConnector?.writePersonification(_personification);
+      });
+    }
+  }
+
+  void setMaxOpenLevel(int maxOpenLevel) {
+    if (_personification != null) {
+      _personification.maxOpenLevel = maxOpenLevel;
+      notifyListeners();
+      print("Change max open level to $maxOpenLevel%");
+
+      _personificationDebouncer.debounce(() {
+        _floowerConnector?.writePersonification(_personification);
+      });
+    }
+  }
+
+  void setLightIntensity(int lightIntensity) {
+    if (_personification != null) {
+      _personification.lightIntensity = lightIntensity;
+      notifyListeners();
+      print("Change light intensity to $lightIntensity%");
+
+      _personificationDebouncer.debounce(() {
+        _floowerConnector?.writePersonification(_personification);
+      });
+    }
   }
 
   void openPetals() {
@@ -183,7 +224,7 @@ class FloowerModel extends ChangeNotifier {
     }
 
     _name = await _floowerConnector.readName();
-    _touchThreshold = await _floowerConnector.readTouchThreshold();
+    _personification = await _floowerConnector.readPersonification();
     _serialNumber = await _floowerConnector.readSerialNumber();
     _modelName = await _floowerConnector.readModelName();
     _firmwareVersion = await _floowerConnector.readFirmwareVersion();

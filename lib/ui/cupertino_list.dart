@@ -69,6 +69,8 @@ class CupertinoListItem extends StatefulWidget {
   final Widget title;
   final Widget trailing;
   final void Function() onTap;
+  final double paddingTop;
+  final double paddingBottom;
 
   const CupertinoListItem({
     Key key,
@@ -76,6 +78,8 @@ class CupertinoListItem extends StatefulWidget {
     @required this.title,
     this.trailing,
     this.onTap,
+    this.paddingTop,
+    this.paddingBottom
   }) : super(key: key);
 
   @override
@@ -117,7 +121,7 @@ class _CupertinoListItemState extends State<CupertinoListItem> {
         ),
         duration: Duration(milliseconds: 50),
         child: Padding(
-          padding: EdgeInsets.all(22),
+          padding: EdgeInsets.only(left: 22, right: 22, top: widget.paddingTop ?? 22, bottom: widget.paddingBottom ?? 22),
           child: DefaultTextStyle(
             style: CupertinoTheme.of(context).textTheme.textStyle,
             child: Row(

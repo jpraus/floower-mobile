@@ -319,7 +319,7 @@ class _ColorPicker extends StatelessWidget {
       ),
       actions: <Widget>[
         CupertinoActionSheetAction(
-          child: Text("Candle Light"),
+          child: Text("Candlelight"),
           onPressed: () {
             this.onPlay(2);
             Navigator.pop(context);
