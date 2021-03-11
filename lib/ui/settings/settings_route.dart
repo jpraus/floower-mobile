@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_xlider/flutter_xlider.dart';
 import 'package:provider/provider.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
@@ -110,10 +111,9 @@ class _SettingsScreen extends StatelessWidget {
               title: PersonificationSlider(
                 min: 5,
                 max: 100,
-                divisions: 95,
+                step: 1,
                 value: floowerModel.lightIntensity?.toDouble(),
-                onChanged: (value) =>
-                    floowerModel.setLightIntensity(value.toInt()),
+                onChanged: (value) => floowerModel.setLightIntensity(value.toInt()),
               ),
               trailing: Icon(CupertinoIcons.sun_max_fill,
                   color: FloowerTextTheme.secondaryColor()),
@@ -125,35 +125,34 @@ class _SettingsScreen extends StatelessWidget {
             CupertinoListItem(
               paddingTop: 0,
               leading: Text(
-                  "Fast", style: FloowerTextTheme.secondaryLabel(context)),
+                  "Slow", style: FloowerTextTheme.secondaryLabel(context)),
               title: PersonificationSlider(
                 min: 5,
                 max: 100,
-                divisions: 95,
-                value: floowerModel.speed?.toDouble(),
-                onChanged: (value) => floowerModel.setSpeed(value.toInt()),
+                step: 1,
+                value: 105 - floowerModel.speed?.toDouble(), // reversed slider
+                onChanged: (value) => floowerModel.setSpeed(105 - value.toInt()),
               ),
-              trailing: Text(
-                  "Slow", style: FloowerTextTheme.secondaryLabel(context)),
+              trailing: Text("Fast", style: FloowerTextTheme.secondaryLabel(context)),
             ),
             CupertinoListItem(
-              title: Text("Blossom Opened Size"),
+              title: Text("Petals Openness"),
               paddingBottom: 11,
             ),
             CupertinoListItem(
               paddingTop: 0,
-              leading: Text(
-                  "5%", style: FloowerTextTheme.secondaryLabel(context)),
+              leading: Text("5%", style: FloowerTextTheme.secondaryLabel(context)),
               title: PersonificationSlider(
                 min: 10,
                 max: 100,
-                divisions: 18,
+                step: 5,
                 value: floowerModel.maxOpenLevel?.toDouble(),
-                onChanged: (value) =>
-                    floowerModel.setMaxOpenLevel(value.toInt()),
+                onChanged: (value) {
+                  floowerModel.openPetals(level: value.toInt());
+                  floowerModel.setMaxOpenLevel(value.toInt());
+                },
               ),
-              trailing: Text(
-                  "100%", style: FloowerTextTheme.secondaryLabel(context)),
+              trailing: Text("100%", style: FloowerTextTheme.secondaryLabel(context)),
             ),
             CupertinoListItem(
               title: Text("Touch Sensitivity"),
@@ -166,13 +165,11 @@ class _SettingsScreen extends StatelessWidget {
               title: PersonificationSlider(
                 min: 40,
                 max: 50,
-                divisions: 10,
+                step: 1,
                 value: floowerModel.touchThreshold?.toDouble(),
-                onChanged: (value) =>
-                    floowerModel.setTouchThreshold(value.toInt()),
+                onChanged: (value) => floowerModel.setTouchThreshold(value.toInt()),
               ),
-              trailing: Text(
-                  "High", style: FloowerTextTheme.secondaryLabel(context)),
+              trailing: Text("High", style: FloowerTextTheme.secondaryLabel(context)),
             ),
           ]
       ));
@@ -222,14 +219,14 @@ class PersonificationSlider extends StatelessWidget {
   final double min;
   final double max;
   final double value;
-  final int divisions;
+  final double step;
   final ValueChanged<double> onChanged;
 
   PersonificationSlider({
     this.min,
     this.max,
     this.value,
-    this.divisions,
+    this.step,
     this.onChanged
   });
 
@@ -239,12 +236,36 @@ class PersonificationSlider extends StatelessWidget {
       return SizedBox();
     }
 
-    return CupertinoSlider(
-      value: value,
-      onChanged: onChanged,
-      min: min,
-      max: max,
-      divisions: divisions,
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      child: FlutterSlider(
+        values: [value],
+        max: max,
+        min: min,
+        step: FlutterSliderStep(
+            step: step
+        ),
+        onDragCompleted: (handlerIndex, lowerValue, upperValue) => onChanged(lowerValue),
+        handler: FlutterSliderHandler(
+          decoration: BoxDecoration(
+              boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
+              color: Colors.white,
+              shape: BoxShape.circle
+          ),
+          child: Container()
+        ),
+        /*trackBar: FlutterSliderTrackBar(
+          inactiveTrackBar: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            color: CupertinoColors.activeBlue, // opacity 1
+          ),
+          activeTrackBarHeight: 3,
+          inactiveTrackBarHeight: 3,
+          activeTrackBar: BoxDecoration(
+            color: Colors.transparent,
+          )
+        ),*/
+      )
     );
   }
 }
