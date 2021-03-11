@@ -144,16 +144,21 @@ class FloowerModel extends ChangeNotifier {
     }
   }
 
-  void openPetals() {
+  void openPetals({ int level, Duration duration }) {
+    level = level ?? _personification.maxOpenLevel;
+    if (duration == null) {
+      int levelDiff = (_petalsOpenLevel - level).abs();
+      duration = Duration(milliseconds: (_personification.speed * levelDiff).toInt());
+    }
     _stateTrottler.throttle(() {
-      _floowerConnector?.writeState(openLevel: 100, transitionDuration: Duration(seconds: 5));
+      _floowerConnector?.writeState(openLevel: level, transitionDuration: duration);
     });
-    _petalsOpenLevel = 100;
+    _petalsOpenLevel = level;
   }
 
-  void closePetals() {
+  void closePetals({ duration = const Duration(seconds: 5) }) {
     _stateTrottler.throttle(() {
-      _floowerConnector?.writeState(openLevel: 0, transitionDuration: Duration(seconds: 5));
+      _floowerConnector?.writeState(openLevel: 0, transitionDuration: duration);
     });
     _petalsOpenLevel = 0;
   }
@@ -162,8 +167,8 @@ class FloowerModel extends ChangeNotifier {
     _stateTrottler.throttle(() async {
       FloowerState currentState = await _floowerConnector?.readState();
       if (currentState != null) {
-        int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : 100;
-        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.hwColor, transitionDuration: Duration(seconds: 5));
+        int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : _personification.maxOpenLevel;
+        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.hwColor, transitionDuration: Duration(milliseconds: _personification.speed * 100));
       }
     });
   }
