@@ -353,7 +353,10 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                     delegate: SliverChildListDelegate([
                       Container(
                         padding: EdgeInsets.only(left: 15, top: 25, bottom: 10),
-                        child: Text("Hue"),
+                        child: DefaultTextStyle(
+                          style: FloowerTextTheme.listTitle(context),
+                          child: Text("Hue"),
+                        )
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10),
@@ -404,7 +407,10 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       ),
                       Container(
                         padding: EdgeInsets.only(left: 15, top: 25, bottom: 10),
-                        child: Text("Saturation"),
+                        child: DefaultTextStyle(
+                          style: FloowerTextTheme.listTitle(context),
+                          child: Text("Saturation"),
+                        )
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10),

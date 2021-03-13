@@ -31,6 +31,11 @@ class FloowerColor {
   HSVColor get color => _color;
   Color toColor() => _color.toColor();
   Color toColorWithAlpha(double alpha) => _color.withAlpha(alpha).toColor();
+  Color toColorWithValue(double value) => _color.withValue(value).toColor();
+
+  FloowerColor withValue(double value) {
+    return FloowerColor(color.withValue(value));
+  }
 
   bool isBlack() {
     return _color.value == 0;
@@ -53,7 +58,7 @@ class FloowerColor {
     if (hwColor.red == 0 && hwColor.green == 0 && hwColor.blue == 0) {
       return COLOR_BLACK;
     }
-    return FloowerColor(HSVColor.fromColor(hwColor));
+    return FloowerColor(HSVColor.fromColor(hwColor).withValue(1.0));
   }
 
   static FloowerColor fromRGB(int red, int green, int blue) {

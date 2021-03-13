@@ -37,7 +37,7 @@ class FloowerModel extends ChangeNotifier {
   int get behavior => _personification?.behavior;
   int get speed => _personification?.speed;
   int get maxOpenLevel => _personification?.maxOpenLevel;
-  int get lightIntensity => _personification?.lightIntensity;
+  int get colorBrightness => _personification?.colorBrightness;
   int get serialNumber => _serialNumber;
   String get modelName => _modelName;
   int get firmwareVersion => _firmwareVersion;
@@ -91,8 +91,12 @@ class FloowerModel extends ChangeNotifier {
     _colorsScheme = colorsScheme;
     notifyListeners();
 
-    _colorSchemeDebouncer.debounce(() {
-      _floowerConnector?.writeColorScheme(colorScheme: colorsScheme.map((color) => color.toColor()).toList());
+    _colorSchemeDebouncer.debounce(() async {
+      WriteResult writeResult = await _floowerConnector?.writeHSColorScheme(colorScheme: colorsScheme.map((color) => color.color).toList());
+      if (!writeResult.success) {
+        // fallback to RGB color scheme
+        _floowerConnector?.writeRGBColorScheme(colorScheme: colorsScheme.map((color) => color.toColor()).toList());
+      }
     });
   }
 
@@ -132,25 +136,18 @@ class FloowerModel extends ChangeNotifier {
     }
   }
 
-  void setLightIntensity(int lightIntensity) {
+  void setColorBrightness(int colorBrightness) {
     if (_personification != null) {
-      _personification.lightIntensity = lightIntensity;
-
-      // set the light intensity shift to the color calculator
-      //FloowerColor.setLightIntensity(lightIntensity);
-
-      // update the color scheme with new light intensity
-      _colorSchemeDebouncer.debounce(() {
-        _floowerConnector?.writeColorScheme(colorScheme: _colorsScheme.map((color) => color.toColor()).toList());
-      });
-      FloowerColor color = _color.isBlack() ? FloowerColor.COLOR_WHITE : _color;
-      setColor(color, notifyListener: false);
-
+      _personification.colorBrightness = colorBrightness;
       notifyListeners();
-      print("Change light intensity to $lightIntensity%");
+      print("Change color brightness to $colorBrightness%");
 
-      _personificationDebouncer.debounce(() {
-        _floowerConnector?.writePersonification(_personification);
+      _personificationDebouncer.debounce(() async {
+        WriteResult writeResult = await _floowerConnector?.writePersonification(_personification);
+        if (writeResult.success) {
+          FloowerColor color = _color.isBlack() ? FloowerColor.COLOR_WHITE : _color;
+          setColor(color);
+        }
       });
     }
   }
@@ -187,9 +184,16 @@ class FloowerModel extends ChangeNotifier {
   Future<List<FloowerColor>> getColorsScheme() async {
     if (_paired) {
       if (_colorsScheme == null) {
-        _colorsScheme = (await _floowerConnector?.readColorsScheme())
-            .map((color) => FloowerColor.fromColor(color))
-            .toList();
+        List<HSVColor> hsvColors = await _floowerConnector.readHSColorScheme();
+        if (hsvColors.isNotEmpty) {
+          _colorsScheme = hsvColors.map((color) => FloowerColor(color)).toList();
+        }
+        else {
+          // fallback to RGB color scheme
+          _colorsScheme = (await _floowerConnector?.readRGBColorScheme())
+              .map((color) => FloowerColor.fromColor(color))
+              .toList();
+        }
       }
       return _colorsScheme;
     }

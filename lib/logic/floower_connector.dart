@@ -29,9 +29,9 @@ class PersonificationSettings {
   int behavior;
   int speed;
   int maxOpenLevel;
-  int lightIntensity;
-  PersonificationSettings({this.touchThreshold, this.behavior, this.speed, this.maxOpenLevel, this.lightIntensity});
-  String toString() => "(touchThreshold=$touchThreshold behavior=$behavior speed=$speed maxOpenLevel=$maxOpenLevel lightIntensity=$lightIntensity)";
+  int colorBrightness;
+  PersonificationSettings({this.touchThreshold, this.behavior, this.speed, this.maxOpenLevel, this.colorBrightness});
+  String toString() => "(touchThreshold=$touchThreshold behavior=$behavior speed=$speed maxOpenLevel=$maxOpenLevel colorBrightness=$colorBrightness)";
 }
 
 enum WriteError {
@@ -98,7 +98,10 @@ abstract class FloowerConnector extends ChangeNotifier {
 
   Future<WriteResult> writePersonification(PersonificationSettings personificationSettings);
 
-  Future<WriteResult> writeColorScheme({List<Color> colorScheme});
+  @deprecated
+  Future<WriteResult> writeRGBColorScheme({List<Color> colorScheme});
+
+  Future<WriteResult> writeHSColorScheme({List<HSVColor> colorScheme});
 
   Stream<FloowerState> subscribeState();
 
@@ -116,7 +119,9 @@ abstract class FloowerConnector extends ChangeNotifier {
 
   Future<int> readFirmwareVersion();
 
-  Future<List<Color>> readColorsScheme();
+  Future<List<Color>> readRGBColorScheme();
+
+  Future<List<HSVColor>> readHSColorScheme();
 
   Stream<int> subscribeBatteryLevel();
 
@@ -147,8 +152,10 @@ class FloowerConnectorBle extends FloowerConnector {
   final Uuid FLOOWER_NAME_UUID = Uuid.parse("ab130585-2b27-498e-a5a5-019391317350"); // string, RW
   final Uuid FLOOWER_STATE_UUID = Uuid.parse("ac292c4b-8bd0-439b-9260-2d9526fff89a"); // 4 bytes (open level + R + G + B), RO
   final Uuid FLOOWER_STATE_CHANGE_UUID = Uuid.parse("11226015-0424-44d3-b854-9fc332756cbf"); // 6 bytes (open level + R + G + B + transition duration + mode), WO
-  final Uuid FLOOWER_COLORS_SCHEME_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R +G + B), ..]
-  final Uuid FLOOWER_PERSONIFICATION_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // 5 bytes as for now, personification of the Floower (touchThreshold, behavior, speed, maxOpenLevel, lightIntensity)
+  @deprecated
+  final Uuid FLOOWER_COLORS_SCHEME_RGB_UUID = Uuid.parse("7b1e9cff-de97-4273-85e3-fd30bc72e128"); // array of 3 bytes per pre-defined color [(R + G + B), (R + G + B), ..], DEPRECATED BY FLOOWER_COLORS_SCHEME_HS_UUID
+  final Uuid FLOOWER_COLORS_SCHEME_HS_UUID = Uuid.parse("10b8879e-0ea0-4fe2-9055-a244a1eaca8b"); // array of 2 bytes per stored HSB color, B is missing [(H/9 + S/7), (H/9 + S/7), ..]
+  final Uuid FLOOWER_PERSONIFICATION_UUID = Uuid.parse("c380596f-10d2-47a7-95af-95835e0361c7"); // 5 bytes as for now, personification of the Floower (touchThreshold, behavior, speed, maxOpenLevel, colorBrightness)
 
   final BleProvider _bleProvider;
 
@@ -223,7 +230,7 @@ class FloowerConnectorBle extends FloowerConnector {
     if (personificationSettings.maxOpenLevel < 10 && personificationSettings.maxOpenLevel > 100) {
       throw ValueException(message: "Invalid speed value [10,100]");
     }
-    if (personificationSettings.lightIntensity < 10 && personificationSettings.lightIntensity > 100) {
+    if (personificationSettings.colorBrightness < 10 && personificationSettings.colorBrightness > 100) {
       throw ValueException(message: "Invalid speed value [10,100]");
     }
 
@@ -235,13 +242,13 @@ class FloowerConnectorBle extends FloowerConnector {
           personificationSettings.behavior,
           personificationSettings.speed,
           personificationSettings.maxOpenLevel,
-          personificationSettings.lightIntensity
+          personificationSettings.colorBrightness
         ]
     );
   }
 
   @override
-  Future<WriteResult> writeColorScheme({List<Color> colorScheme}) {
+  Future<WriteResult> writeRGBColorScheme({List<Color> colorScheme}) {
     List<int> value = colorScheme
         .map((color) => [color.red, color.green, color.blue])
         .expand((color) => color)
@@ -250,7 +257,27 @@ class FloowerConnectorBle extends FloowerConnector {
     print("Writing color scheme: $value");
     return _writeCharacteristic(
         serviceId: FLOOWER_SERVICE_UUID,
-        characteristicId: FLOOWER_COLORS_SCHEME_UUID,
+        characteristicId: FLOOWER_COLORS_SCHEME_RGB_UUID,
+        value: value
+    );
+  }
+
+  @override
+  Future<WriteResult> writeHSColorScheme({List<HSVColor> colorScheme}) {
+    List<int> value = colorScheme
+        .map((color) {
+          int valueH = color.hue.toInt(); // 0 - 360
+          int valueS = (color.saturation * 100).toInt(); // 0 - 100
+          int valueHS = (valueH << 7) | (valueS & 0x7F);
+          return [(valueHS >> 8) & 0xFF, valueHS & 0xFF]; // [HHHHHHHH|HSSSSSSS] H = 9 Hue bits, S = 7 Saturation bits
+        })
+        .expand((color) => color)
+        .toList();
+
+    print("Writing color scheme: $value");
+    return _writeCharacteristic(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_COLORS_SCHEME_HS_UUID,
         value: value
     );
   }
@@ -373,7 +400,7 @@ class FloowerConnectorBle extends FloowerConnector {
         behavior: value[1] ?? 0,
         speed: value[2] ?? 0,
         maxOpenLevel: value[3] ?? 0,
-        lightIntensity: value[4] ?? 0,
+        colorBrightness: value[4] ?? 0,
       );
       print("Got personification settings '$personification'");
       return personification;
@@ -449,10 +476,10 @@ class FloowerConnectorBle extends FloowerConnector {
   }
 
   @override
-  Future<List<Color>> readColorsScheme() {
+  Future<List<Color>> readRGBColorScheme() {
     return _readCharacteristics(
         serviceId: FLOOWER_SERVICE_UUID,
-        characteristicId: FLOOWER_COLORS_SCHEME_UUID
+        characteristicId: FLOOWER_COLORS_SCHEME_RGB_UUID
     ).then((value) {
       if (value.length % 3 != 0) {
         throw ValueException(message: "Invalid colors scheme format");
@@ -468,6 +495,39 @@ class FloowerConnectorBle extends FloowerConnector {
       for (int c = 0; c < count; c++) {
         int byte = c * 3;
         colors.add(Color.fromRGBO(value[byte], value[byte + 1], value[byte + 2], 1));
+      }
+      return colors;
+    }).catchError((e, stackTrace) {
+      print("Failed to get color scheme: ${e.toString()}");
+      print(stackTrace);
+      return [];
+    });
+  }
+
+  Future<List<HSVColor>> readHSColorScheme() {
+    return _readCharacteristics(
+        serviceId: FLOOWER_SERVICE_UUID,
+        characteristicId: FLOOWER_COLORS_SCHEME_HS_UUID
+    ).then((value) {
+      if (value.length % 2 != 0) {
+        throw ValueException(message: "Invalid colors scheme format");
+      }
+      for (int byte in value) {
+        if (byte < 0 || byte > 255) {
+          throw ValueException(message: "RGB color values out of range");
+        }
+      }
+      print("Got colors scheme ${value.toString()}");
+      int count = (value.length / 2).floor();
+      List<HSVColor> colors = [];
+      for (int c = 0; c < count; c++) {
+        int byte = c * 2;
+        int valueHS = (value[byte] << 8) | value[byte + 1];
+        double saturation = (valueHS & 0x7F).toDouble(); // 0 - 100
+        saturation = saturation / 100.0;
+        int hue = valueHS >> 7; // 0 - 360
+        print("color[$c]: valueHS=$valueHS hue=$hue, saturation=$saturation");
+        colors.add(HSVColor.fromAHSV(1.0, hue.toDouble(), saturation, 1.0));
       }
       return colors;
     }).catchError((e, stackTrace) {
@@ -684,14 +744,14 @@ class FloowerConnectorDemo extends FloowerConnector {
   bool _paired = true;
   int _petalsOpenLevel = 0;
   Color _color = Colors.black;
-  List<Color> _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME).map((color) => color.toColor()).toList();
+  List<HSVColor> _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME).map((color) => color.color).toList();
   String _name = "Floower Demo";
   PersonificationSettings _personificationSettings = PersonificationSettings(
     touchThreshold: 45,
     behavior: 0,
     speed: 50,
     maxOpenLevel: 100,
-    lightIntensity: 70
+    colorBrightness: 70
   );
 
   FloowerConnectionState get state => _paired ? FloowerConnectionState.paired : FloowerConnectionState.disconnected;
@@ -726,7 +786,11 @@ class FloowerConnectorDemo extends FloowerConnector {
     return WriteResult(success: true);
   }
 
-  Future<WriteResult> writeColorScheme({List<Color> colorScheme}) async {
+  Future<WriteResult> writeRGBColorScheme({List<Color> colorScheme}) async {
+    return WriteResult(success: false);
+  }
+
+  Future<WriteResult> writeHSColorScheme({List<HSVColor> colorScheme}) async {
     _colorsScheme = colorScheme;
     notifyListeners();
     return WriteResult(success: true);
@@ -764,7 +828,11 @@ class FloowerConnectorDemo extends FloowerConnector {
     return 7;
   }
 
-  Future<List<Color>> readColorsScheme() async {
+  Future<List<Color>> readRGBColorScheme() async {
+    return [];
+  }
+
+  Future<List<HSVColor>> readHSColorScheme() async {
     return _colorsScheme;
   }
 
