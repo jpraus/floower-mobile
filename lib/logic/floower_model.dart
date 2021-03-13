@@ -18,7 +18,7 @@ class FloowerModel extends ChangeNotifier {
 
   // read/write
   int _petalsOpenLevel = 0; // TODO read from state
-  FloowerColor _color = FloowerColor.black;
+  FloowerColor _color = FloowerColor.COLOR_BLACK;
   List<FloowerColor> _colorsScheme; // max 10 colos
   String _name = "";
   PersonificationSettings _personification;
@@ -63,12 +63,12 @@ class FloowerModel extends ChangeNotifier {
     print("Change color to $color");
 
     _stateTrottler.throttle(() {
-      _floowerConnector?.writeState(color: color.hwColor, transitionDuration: transitionDuration);
+      _floowerConnector?.writeState(color: color.toColor(), transitionDuration: transitionDuration);
     });
   }
 
   void playAnimation(int animation) {
-    _color = FloowerColor.black;
+    _color = FloowerColor.COLOR_BLACK;
     notifyListeners();
 
     print("Play animation $animation");
@@ -87,12 +87,12 @@ class FloowerModel extends ChangeNotifier {
     _floowerConnector?.writeName(name);
   }
 
-  void setColorScheme(List<FloowerColor> colorScheme) {
-    _colorsScheme = colorScheme;
+  void setColorScheme(List<FloowerColor> colorsScheme) {
+    _colorsScheme = colorsScheme;
     notifyListeners();
 
     _colorSchemeDebouncer.debounce(() {
-      _floowerConnector?.writeColorScheme(colorScheme: colorScheme.map((color) => color.hwColor).toList());
+      _floowerConnector?.writeColorScheme(colorScheme: colorsScheme.map((color) => color.toColor()).toList());
     });
   }
 
@@ -135,6 +135,17 @@ class FloowerModel extends ChangeNotifier {
   void setLightIntensity(int lightIntensity) {
     if (_personification != null) {
       _personification.lightIntensity = lightIntensity;
+
+      // set the light intensity shift to the color calculator
+      //FloowerColor.setLightIntensity(lightIntensity);
+
+      // update the color scheme with new light intensity
+      _colorSchemeDebouncer.debounce(() {
+        _floowerConnector?.writeColorScheme(colorScheme: _colorsScheme.map((color) => color.toColor()).toList());
+      });
+      FloowerColor color = _color.isBlack() ? FloowerColor.COLOR_WHITE : _color;
+      setColor(color, notifyListener: false);
+
       notifyListeners();
       print("Change light intensity to $lightIntensity%");
 
@@ -168,7 +179,7 @@ class FloowerModel extends ChangeNotifier {
       FloowerState currentState = await _floowerConnector?.readState();
       if (currentState != null) {
         int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : _personification.maxOpenLevel;
-        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.hwColor, transitionDuration: Duration(milliseconds: _personification.speed * 100));
+        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.toColor(), transitionDuration: Duration(milliseconds: _personification.speed * 100));
       }
     });
   }
@@ -177,7 +188,7 @@ class FloowerModel extends ChangeNotifier {
     if (_paired) {
       if (_colorsScheme == null) {
         _colorsScheme = (await _floowerConnector?.readColorsScheme())
-            .map((color) => FloowerColor.fromHwColor(color))
+            .map((color) => FloowerColor.fromColor(color))
             .toList();
       }
       return _colorsScheme;
@@ -223,7 +234,7 @@ class FloowerModel extends ChangeNotifier {
 
     FloowerState state = await _floowerConnector.readState();
     if (state != null) {
-      _color = FloowerColor.fromHwColor(state.color);
+      _color = FloowerColor.fromColor(state.color);
       _petalsOpenLevel = state.petalsOpenLevel;
       notifyListeners();
     }
@@ -248,7 +259,7 @@ class FloowerModel extends ChangeNotifier {
   void _onStateChange(FloowerState state) {
     if (_paired) {
       _petalsOpenLevel = state.petalsOpenLevel;
-      _color = FloowerColor.fromHwColor(state.color);
+      _color = FloowerColor.fromColor(state.color);
       notifyListeners();
     }
   }

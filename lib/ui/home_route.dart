@@ -133,7 +133,7 @@ class _Floower extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                      colors: [floowerModel.color.displayColor, floowerModel.color.displayColor, CupertinoTheme.of(context).scaffoldBackgroundColor],
+                      colors: [floowerModel.color.toColor(), floowerModel.color.toColor(), CupertinoTheme.of(context).scaffoldBackgroundColor],
                     )
                   ),
                 ),
@@ -269,9 +269,15 @@ class _ColorPicker extends StatelessWidget {
         margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color.displayColor,
-          border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0))
+          color: Colors.white
         ),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.toColorWithAlpha(0.6),
+            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0))
+          ),
+        )
       ),
       onTap: () => onSelect(color),
     )).toList();
@@ -287,7 +293,7 @@ class _ColorPicker extends StatelessWidget {
         ),
         child: Icon(Icons.power_settings_new, color: borderColor),
       ),
-      onTap: () => onSelect(FloowerColor.black)
+      onTap: () => onSelect(FloowerColor.COLOR_BLACK)
     ));
 
     if (floowerModel.firmwareVersion >= 6) {

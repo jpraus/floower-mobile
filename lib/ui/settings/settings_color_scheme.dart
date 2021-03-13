@@ -11,8 +11,6 @@ import 'package:flutter_xlider/flutter_xlider.dart';
 import 'package:Floower/logic/floower_color.dart';
 import 'package:Floower/logic/floower_model.dart';
 import 'package:Floower/ui/cupertino_list.dart';
-import 'package:tinycolor/conversion.dart';
-import 'package:tinycolor/tinycolor.dart';
 
 import '../commons.dart';
 
@@ -61,7 +59,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
         builder: (context) => _ColorPickerDialog(
           floowerModel: widget.floowerModel,
           originalColor: color,
-          colorPicked: (color) {
+          onColorPicked: (color) {
             setState(() {
               _colorScheme.removeAt(index);
               _colorScheme.insert(index, color);
@@ -82,7 +80,7 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
         context: context,
         builder: (context) => _ColorPickerDialog(
           floowerModel: widget.floowerModel,
-          colorPicked: (color) {
+          onColorPicked: (color) {
             setState(() {
               _colorScheme.add(color);
             });
@@ -172,11 +170,17 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.displayColor,
-              border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0)),
+                shape: BoxShape.circle,
+                color: Colors.white
             ),
-            child: _removing ? Icon(CupertinoIcons.clear_thick, size: 20, color: color.isLight() ? Colors.black : Colors.white) : null
+            child: Container(
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.toColorWithAlpha(0.6),
+                  border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0))
+              ),
+              child: _removing ? Icon(CupertinoIcons.clear_thick, size: 20, color: color.isLight() ? Colors.black : Colors.white) : null
+            )
           ),
         ),
       ));
@@ -272,10 +276,10 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
 class _ColorPickerDialog extends StatefulWidget {
 
   final FloowerColor originalColor;
-  final Function(FloowerColor color) colorPicked;
+  final Function(FloowerColor color) onColorPicked;
   final FloowerModel floowerModel;
 
-  _ColorPickerDialog({ this.originalColor, @required this.colorPicked, this.floowerModel });
+  _ColorPickerDialog({ this.originalColor, @required this.onColorPicked, this.floowerModel });
 
   @override
   _ColorPickerDialogState createState() => _ColorPickerDialogState();
@@ -283,13 +287,13 @@ class _ColorPickerDialog extends StatefulWidget {
 
 class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
-  HslColor _currentHslColor = FloowerColor.COLOR_RED.displayHSLColor;
+  HSVColor _currentHsvColor = FloowerColor.COLOR_RED.color;
 
   @override
   void initState() {
     super.initState();
     if (widget.originalColor != null) {
-      _currentHslColor = widget.originalColor.displayHSLColor;
+      _currentHsvColor = widget.originalColor.color;
     }
   }
 
@@ -297,38 +301,38 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   void didUpdateWidget(_ColorPickerDialog oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.originalColor != null) {
-      _currentHslColor = widget.originalColor.displayHSLColor;
+      _currentHsvColor = widget.originalColor.color;
     }
   }
 
   Future<bool> _onWillPop() async {
-    _showColor(Colors.black);
+    _showColor(FloowerColor.COLOR_BLACK);
     return true;
   }
 
   void _onSave(BuildContext context) async {
-    _showColor(Colors.black);
-    widget.colorPicked(FloowerColor.fromDisplayColor(hslToRgb(_currentHslColor)));
+    _showColor(FloowerColor.COLOR_BLACK);
+    widget.onColorPicked(FloowerColor(_currentHsvColor));
     Navigator.pop(context);
   }
 
   void _onCancel(BuildContext context) async {
-    _showColor(Colors.black);
+    _showColor(FloowerColor.COLOR_BLACK);
     Navigator.pop(context);
   }
 
-  void _onChangeColor(HslColor color) {
-    setState(() => _currentHslColor = color);
-    _showColor(hslToRgb(_currentHslColor));
+  void _onChangeColor(HSVColor color) {
+    setState(() => _currentHsvColor = color);
+    _showColor(FloowerColor(_currentHsvColor));
   }
 
-  Future<void> _showColor(Color color) async {
-    widget.floowerModel.setColor(FloowerColor.fromDisplayColor(color), transitionDuration: Duration(milliseconds: 500), notifyListener: false);
+  Future<void> _showColor(FloowerColor color) async {
+    widget.floowerModel.setColor(color, transitionDuration: Duration(milliseconds: 500), notifyListener: false);
   }
 
   @override
   Widget build(BuildContext context) {
-    TinyColor currentColor = TinyColor.fromHSL(_currentHslColor);
+    print("color: ${_currentHsvColor.hue} ${_currentHsvColor.saturation}");
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -354,16 +358,16 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: FlutterSlider(
-                          values: [_currentHslColor.h],
+                          values: [_currentHsvColor.hue],
                           max: 360.0,
                           min: 0,
                           onDragging: (handlerIndex, lowerValue, upperValue) {
-                            _onChangeColor(HslColor(h: lowerValue, l: _currentHslColor.l, s: 1.0, a: 255.0));
+                            _onChangeColor(HSVColor.fromAHSV(1.0, lowerValue, _currentHsvColor.saturation, 1.0));
                           },
                           handler: FlutterSliderHandler(
                             decoration: BoxDecoration(
                               boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
-                              color: HSVColor.fromAHSV(1.0, _currentHslColor.h, 1.0, 1.0).toColor(),
+                              color: HSVColor.fromAHSV(1.0, _currentHsvColor.hue, 1.0, 1.0).toColor(),
                               shape: BoxShape.circle
                             ),
                             child: Container()
@@ -400,24 +404,24 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       ),
                       Container(
                         padding: EdgeInsets.only(left: 15, top: 25, bottom: 10),
-                        child: Text("Lightness"),
+                        child: Text("Saturation"),
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: FlutterSlider(
-                          values: [_currentHslColor.l],
+                          values: [_currentHsvColor.saturation],
                           max: 1.0,
                           min: 0,
                           step: FlutterSliderStep(
                             step: 0.01
                           ),
                           onDragging: (handlerIndex, lowerValue, upperValue) {
-                            _onChangeColor(HslColor(h: _currentHslColor.h, l: lowerValue, s: 1.0, a: 255.0));
+                            _onChangeColor(HSVColor.fromAHSV(1.0, _currentHsvColor.hue, lowerValue, 1.0));
                           },
                           handler: FlutterSliderHandler(
                             decoration: BoxDecoration(
                               boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
-                              color: currentColor.color,
+                              color: _currentHsvColor.toColor(),
                               shape: BoxShape.circle
                             ),
                             child: Container()
@@ -434,9 +438,9 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                               color: Colors.white, // opacity 1
                               gradient: LinearGradient(
                                 colors: [
-                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 0.0).toColor(),
-                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 0.5).toColor(),
-                                  HSLColor.fromAHSL(1.0, _currentHslColor.h, 1.0, 1.0).toColor(),
+                                  HSVColor.fromAHSV(1.0, _currentHsvColor.hue, 0, 1.0).toColor(),
+                                  HSVColor.fromAHSV(1.0, _currentHsvColor.hue, 0.5, 1.0).toColor(),
+                                  HSVColor.fromAHSV(1.0, _currentHsvColor.hue, 1.0, 1.0).toColor(),
                                 ]
                               )
                             ),
@@ -451,8 +455,8 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                       Container(
                         padding: EdgeInsets.only(left: 15, right: 15, top: 30),
                         child: CupertinoButton(
-                          child: Text("Use Color", style: TextStyle(color: currentColor.isLight() ? Colors.black : Colors.white)),
-                          color: currentColor.color,
+                          child: Text("Use Color", style: TextStyle(color: _currentHsvColor.saturation < 0.7 ? Colors.black : Colors.white)),
+                          color: _currentHsvColor.toColor(),
                           onPressed: () => _onSave(context)
                         ),
                       ),

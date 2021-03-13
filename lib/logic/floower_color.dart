@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:tinycolor/tinycolor.dart';
 
 class FloowerColor {
 
-  static const int INTENSITY_SHIFT = 30;
-
   // pre-defined colors, keep in sync with firmware
-  static FloowerColor COLOR_RED = FloowerColor.fromHwRGB(156, 0, 0);
-  static FloowerColor COLOR_GREEN = FloowerColor.fromHwRGB(40, 178, 0);
-  static FloowerColor COLOR_BLUE = FloowerColor.fromHwRGB(0, 65, 178);
-  static FloowerColor COLOR_YELLOW = FloowerColor.fromHwRGB(178, 170, 0);
-  static FloowerColor COLOR_ORANGE = FloowerColor.fromHwRGB(178, 64, 0);
-  static FloowerColor COLOR_WHITE = FloowerColor.fromHwRGB(178, 178, 178);
-  static FloowerColor COLOR_PURPLE = FloowerColor.fromHwRGB(148, 0, 178);
-  static FloowerColor COLOR_PINK = FloowerColor.fromHwRGB(178, 0, 73);
+  static FloowerColor COLOR_RED = FloowerColor.fromHSV(0.0, 1.0, 1.0);
+  static FloowerColor COLOR_GREEN = FloowerColor.fromHSV(106.0, 1.0, 1.0);
+  static FloowerColor COLOR_BLUE = FloowerColor.fromHSV(218.0, 1.0, 1.0);
+  static FloowerColor COLOR_YELLOW = FloowerColor.fromHSV(57.0, 1.0, 1.0);
+  static FloowerColor COLOR_ORANGE = FloowerColor.fromHSV(22.0, 1.0, 1.0);
+  static FloowerColor COLOR_WHITE = FloowerColor.fromHSV(0.0, 0.0, 1.0);
+  static FloowerColor COLOR_PURPLE = FloowerColor.fromHSV(299.0, 1.0, 1.0);
+  static FloowerColor COLOR_PINK = FloowerColor.fromHSV(335.0, 1.0, 1.0);
+  static FloowerColor COLOR_BLACK = FloowerColor.fromHSV(0.0, 0.0, 0.0);
 
   static List<FloowerColor> DEFAULT_SCHEME = [
     COLOR_WHITE,
@@ -26,44 +24,49 @@ class FloowerColor {
     COLOR_GREEN,
   ];
 
-  final TinyColor _displayColor;
+  final HSVColor _color;
 
-  FloowerColor._(this._displayColor);
+  FloowerColor(this._color);
 
-  Color get displayColor => _displayColor.color;
-  HSVColor get displayHSVColor => _displayColor.toHsv();
-  HslColor get displayHSLColor => _displayColor.toHsl();
-  Color get hwColor => _displayColor.darken(INTENSITY_SHIFT).color; // intensity down by 30% so it's nice on the display
+  HSVColor get color => _color;
+  Color toColor() => _color.toColor();
+  Color toColorWithAlpha(double alpha) => _color.withAlpha(alpha).toColor();
 
   bool isBlack() {
-    return _displayColor.getBrightness() == 0;
+    return _color.value == 0;
+  }
+
+  bool isDark() {
+    return this.getBrightness() < 128.0;
   }
 
   bool isLight() {
-    return _displayColor.isLight();
+    return !isDark();
   }
 
-  static FloowerColor black = FloowerColor.fromDisplayColor(Colors.black);
-
-  static FloowerColor fromDisplayColor(Color displayColor) {
-    return FloowerColor._(TinyColor(displayColor));
+  double getBrightness() {
+    Color color = _color.toColor();
+    return (color.red * 299 + color.green * 587 + color.blue * 114) / 1000;
   }
 
-  static FloowerColor fromHwColor(Color hwColor) {
-    TinyColor color = TinyColor(hwColor);
-    if (color.getBrightness() == 0) {
-      return black;
+  static FloowerColor fromColor(Color hwColor) {
+    if (hwColor.red == 0 && hwColor.green == 0 && hwColor.blue == 0) {
+      return COLOR_BLACK;
     }
-    return FloowerColor._(color.brighten(INTENSITY_SHIFT)); // display intensity up by 30%
+    return FloowerColor(HSVColor.fromColor(hwColor));
   }
 
-  static FloowerColor fromHwRGB(int red, int green, int blue) {
-    return FloowerColor._(TinyColor.fromRGB(r: red, g: green, b: blue, a: 255).brighten(INTENSITY_SHIFT)); // display intensity up by 30%
+  static FloowerColor fromRGB(int red, int green, int blue) {
+    return FloowerColor(HSVColor.fromColor(Color.fromARGB(255, red, green, blue)));
+  }
+
+  static FloowerColor fromHSV(double hue, double saturation, double value) {
+    return FloowerColor(HSVColor.fromAHSV(1.0, hue, saturation, value));
   }
 
   @override
   String toString() {
-    Color color = _displayColor.color;
-    return "[${color.red},${color.green},${color.blue}]";
+    Color color = _color.toColor();
+    return "[${color.alpha},${color.red},${color.green},${color.blue}]";
   }
 }

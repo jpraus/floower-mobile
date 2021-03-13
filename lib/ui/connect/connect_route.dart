@@ -123,7 +123,7 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
 
   Future<void> _connectToDevice(DiscoveredDevice device) async {
     await _stopScanning();
-    widget.floowerConnector.connect(device.id, pairingColor: FloowerColor.COLOR_YELLOW.hwColor);
+    widget.floowerConnector.connect(device.id, pairingColor: FloowerColor.COLOR_YELLOW.toColor());
     setState(() {
       _device = device;
       _skipInstructions = true;
@@ -179,7 +179,7 @@ class _ConnectMainScreenState extends State<_ConnectMainScreen> {
           screen = FloowerConnected(
               onCancel: _disconnect,
               onPair: () => _onPair(context),
-              color: FloowerColor.COLOR_YELLOW.displayColor
+              color: FloowerColor.COLOR_YELLOW.toColorWithAlpha(0.6)
           );
           break;
 

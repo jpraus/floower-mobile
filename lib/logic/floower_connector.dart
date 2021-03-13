@@ -683,8 +683,8 @@ class FloowerConnectorDemo extends FloowerConnector {
 
   bool _paired = true;
   int _petalsOpenLevel = 0;
-  Color _color = FloowerColor.black.hwColor;
-  List<Color> _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME).map((color) => color.hwColor).toList();
+  Color _color = Colors.black;
+  List<Color> _colorsScheme = List.of(FloowerColor.DEFAULT_SCHEME).map((color) => color.toColor()).toList();
   String _name = "Floower Demo";
   PersonificationSettings _personificationSettings = PersonificationSettings(
     touchThreshold: 45,
