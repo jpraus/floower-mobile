@@ -248,23 +248,12 @@ class PersonificationSlider extends StatelessWidget {
         onDragCompleted: (handlerIndex, lowerValue, upperValue) => onChanged(lowerValue),
         handler: FlutterSliderHandler(
           decoration: BoxDecoration(
-              boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
-              color: Colors.white,
-              shape: BoxShape.circle
+            boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
+            color: Colors.white,
+            shape: BoxShape.circle
           ),
           child: Container()
         ),
-        /*trackBar: FlutterSliderTrackBar(
-          inactiveTrackBar: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            color: CupertinoColors.activeBlue, // opacity 1
-          ),
-          activeTrackBarHeight: 3,
-          inactiveTrackBarHeight: 3,
-          activeTrackBar: BoxDecoration(
-            color: Colors.transparent,
-          )
-        ),*/
       )
     );
   }

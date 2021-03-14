@@ -269,13 +269,14 @@ class _ColorPicker extends StatelessWidget {
         margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white
+          color: Colors.white,
+          //boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 2, spreadRadius: 0.2, offset: Offset(0, 1))],
         ),
         child: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color.toColorWithAlpha(0.6),
-            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0))
+            border: Border.all(color: borderColor.withOpacity(color.isLight() ? 0.1 : 0)),
           ),
         )
       ),

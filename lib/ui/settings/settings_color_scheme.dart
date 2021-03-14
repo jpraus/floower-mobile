@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:Floower/logic/floower_connector.dart';
 import 'package:flutter/cupertino.dart';
@@ -155,6 +156,11 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
       return SizedBox(width: 0, height: 0);
     }
 
+    double spacing = 18;
+    double maxWidth = MediaQuery.of(context).size.width - spacing - 2 * 18;
+    int circlesInRow = (maxWidth / 64).floor(); // 46 base circle + 18 spacing
+    double circleSize = ((maxWidth / circlesInRow) - spacing).toDouble(); // 16 is spacing
+
     Color borderColor = WidgetsBinding.instance.window.platformBrightness == Brightness.dark ? Colors.white : Colors.black;
     List<Widget> items = [];
 
@@ -167,8 +173,8 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           onTap: () => _onColorTap(context, color, i),
           onLongPress: _onColorLongPress,
           child: Container(
-            width: 48,
-            height: 48,
+            width: circleSize,
+            height: circleSize,
             decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white
@@ -193,8 +199,8 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
         child: GestureDetector(
           onTap: _onRemovingDone,
           child: Container(
-            width: 48,
-            height: 48,
+            width: circleSize,
+            height: circleSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: CupertinoColors.activeBlue
@@ -212,8 +218,8 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           onTap: _removing ? _onRemovingDone : _onColorAdd,
           child: DashedContainer(
             child: Container(
-              width: 48,
-              height: 48,
+              width: circleSize,
+              height: circleSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle
               ),
@@ -243,16 +249,14 @@ class ColorSchemePickerState extends State<ColorSchemePicker> {
           ),
         ],
       ),
-
-
       children: [Container(
         width: double.infinity,
-        padding: EdgeInsets.all(18),
+        padding: EdgeInsets.only(left: spacing, top: spacing, bottom: spacing),
         color: CupertinoTheme.of(context).barBackgroundColor,
         child: ReorderableWrap(
           children: items,
-          spacing: 16,
-          runSpacing: 16,
+          spacing: spacing,
+          runSpacing: spacing,
           needsLongPressDraggable: false,
           buildDraggableFeedback: (context, BoxConstraints constraints, Widget child) {
             return Transform(
@@ -332,8 +336,6 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    print("color: ${_currentHsvColor.hue} ${_currentHsvColor.saturation}");
-
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
