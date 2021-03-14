@@ -410,8 +410,8 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
         children: [
           SizedBox(width: 5),
           icon,
-          SizedBox(width: 5),
-          Text("$level%", style: CupertinoTheme.of(context).textTheme.textStyle)
+          //SizedBox(width: 5),
+          //Text("$level%", style: CupertinoTheme.of(context).textTheme.textStyle)
         ],
       ),
     );
