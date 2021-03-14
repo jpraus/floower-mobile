@@ -395,15 +395,18 @@ class FloowerConnectorBle extends FloowerConnector {
         serviceId: FLOOWER_SERVICE_UUID,
         characteristicId: FLOOWER_PERSONIFICATION_UUID
     ).then((value) {
-      PersonificationSettings personification = PersonificationSettings(
-        touchThreshold: value[0],
-        behavior: value[1] ?? 0,
-        speed: value[2] ?? 0,
-        maxOpenLevel: value[3] ?? 0,
-        colorBrightness: value[4] ?? 0,
-      );
-      print("Got personification settings '$personification'");
-      return personification;
+      if (value.length == 5) {
+        PersonificationSettings personification = PersonificationSettings(
+          touchThreshold: value[0],
+          behavior: value[1] ?? 0,
+          speed: value[2] ?? 0,
+          maxOpenLevel: value[3] ?? 0,
+          colorBrightness: value[4] ?? 0,
+        );
+        print("Got personification settings '$personification'");
+        return personification;
+      }
+      return null;
     }).catchError((e, stackTrace) {
       print("Failed to get personification settings: ${e.toString()}");
       print(stackTrace);
@@ -500,7 +503,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get color scheme: ${e.toString()}");
       print(stackTrace);
-      return [];
+      return List<Color>.empty();
     });
   }
 
@@ -533,7 +536,7 @@ class FloowerConnectorBle extends FloowerConnector {
     }).catchError((e, stackTrace) {
       print("Failed to get color scheme: ${e.toString()}");
       print(stackTrace);
-      return [];
+      return List<HSVColor>.empty();
     });
   }
 
@@ -829,7 +832,7 @@ class FloowerConnectorDemo extends FloowerConnector {
   }
 
   Future<List<Color>> readRGBColorScheme() async {
-    return [];
+    return List<Color>.empty();
   }
 
   Future<List<HSVColor>> readHSColorScheme() async {
