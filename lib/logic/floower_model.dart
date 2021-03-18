@@ -64,7 +64,7 @@ class FloowerModel extends ChangeNotifier {
     print("Change color to $color");
 
     Color adjustedColor;
-    if (adjustBrightness && _personification != null && _personification.colorBrightness > 0) {
+    if (adjustBrightness && !color.isBlack() && _personification != null && _personification.colorBrightness > 0) {
       adjustedColor = color.toColorWithValue(_personification.colorBrightness / 100);
     }
     else {
@@ -185,7 +185,7 @@ class FloowerModel extends ChangeNotifier {
       FloowerState currentState = await _floowerConnector?.readState();
       if (currentState != null) {
         int newOpenLevel = currentState.petalsOpenLevel > 0 ? 0 : _personification.maxOpenLevel;
-        await _floowerConnector?.writeState(openLevel: newOpenLevel, color: color.toColor(), transitionDuration: Duration(milliseconds: _personification.speed * 100));
+        await _floowerConnector?.writeState(openLevel: newOpenLevel, transitionDuration: Duration(milliseconds: _personification.speed * 100));
       }
     });
   }
