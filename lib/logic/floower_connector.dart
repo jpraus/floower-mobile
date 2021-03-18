@@ -27,9 +27,9 @@ class FloowerState {
 class PersonificationSettings {
   int touchThreshold;
   int behavior;
-  int speed;
-  int maxOpenLevel;
-  int colorBrightness;
+  int speed; // multiply by 0.1s
+  int maxOpenLevel; // 0-100 %
+  int colorBrightness; // 0-100 %
   PersonificationSettings({this.touchThreshold, this.behavior, this.speed, this.maxOpenLevel, this.colorBrightness});
   String toString() => "(touchThreshold=$touchThreshold behavior=$behavior speed=$speed maxOpenLevel=$maxOpenLevel colorBrightness=$colorBrightness)";
 }

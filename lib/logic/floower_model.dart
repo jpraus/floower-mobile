@@ -53,7 +53,8 @@ class FloowerModel extends ChangeNotifier {
 
   void setColor(FloowerColor color, {
       Duration transitionDuration = const Duration(milliseconds: 1000),
-      notifyListener = true
+      notifyListener = true,
+      adjustBrightness = true
   }) {
     _color = color;
     if (notifyListener) {
@@ -62,8 +63,16 @@ class FloowerModel extends ChangeNotifier {
 
     print("Change color to $color");
 
+    Color adjustedColor;
+    if (adjustBrightness && _personification != null && _personification.colorBrightness > 0) {
+      adjustedColor = color.toColorWithValue(_personification.colorBrightness / 100);
+    }
+    else {
+      adjustedColor = color.toColor();
+    }
+
     _stateTrottler.throttle(() {
-      _floowerConnector?.writeState(color: color.toColor(), transitionDuration: transitionDuration);
+      _floowerConnector?.writeState(color: adjustedColor, transitionDuration: transitionDuration);
     });
   }
 

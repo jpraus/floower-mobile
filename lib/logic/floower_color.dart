@@ -54,11 +54,11 @@ class FloowerColor {
     return (color.red * 299 + color.green * 587 + color.blue * 114) / 1000;
   }
 
-  static FloowerColor fromColor(Color hwColor) {
-    if (hwColor.red == 0 && hwColor.green == 0 && hwColor.blue == 0) {
+  static FloowerColor fromColor(Color color) {
+    if (color.red == 0 && color.green == 0 && color.blue == 0) {
       return COLOR_BLACK;
     }
-    return FloowerColor(HSVColor.fromColor(hwColor).withValue(1.0));
+    return FloowerColor(HSVColor.fromColor(color).withValue(1.0));
   }
 
   static FloowerColor fromRGB(int red, int green, int blue) {
