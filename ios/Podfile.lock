@@ -9,6 +9,12 @@ PODS:
   - "permission_handler (5.1.0+2)":
     - Flutter
   - Protobuf (3.13.0)
+  - Sentry (6.1.4):
+    - Sentry/Core (= 6.1.4)
+  - Sentry/Core (6.1.4)
+  - sentry_flutter (0.0.1):
+    - Flutter
+    - Sentry (~> 6.1.4)
   - shared_preferences (0.0.1):
     - Flutter
   - SwiftProtobuf (1.12.0)
@@ -22,6 +28,7 @@ DEPENDENCIES:
   - flutter_reactive_ble (from `.symlinks/plugins/flutter_reactive_ble/ios`)
   - package_info (from `.symlinks/plugins/package_info/ios`)
   - permission_handler (from `.symlinks/plugins/permission_handler/ios`)
+  - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
   - system_setting (from `.symlinks/plugins/system_setting/ios`)
   - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
@@ -29,6 +36,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - Protobuf
+    - Sentry
     - SwiftProtobuf
 
 EXTERNAL SOURCES:
@@ -40,6 +48,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info/ios"
   permission_handler:
     :path: ".symlinks/plugins/permission_handler/ios"
+  sentry_flutter:
+    :path: ".symlinks/plugins/sentry_flutter/ios"
   shared_preferences:
     :path: ".symlinks/plugins/shared_preferences/ios"
   system_setting:
@@ -53,6 +63,8 @@ SPEC CHECKSUMS:
   package_info: 873975fc26034f0b863a300ad47e7f1ac6c7ec62
   permission_handler: ccb20a9fad0ee9b1314a52b70b76b473c5f8dab0
   Protobuf: 3dac39b34a08151c6d949560efe3f86134a3f748
+  Sentry: 9d055e2de30a77685e86b219acf02e59b82091fc
+  sentry_flutter: 8b2b2e1c0101ef562106b5d272d3c0c741512c01
   shared_preferences: af6bfa751691cdc24be3045c43ec037377ada40d
   SwiftProtobuf: 4ef85479c18ca85b5482b343df9c319c62bda699
   system_setting: 92cc591ade5113a6fd57ed0702dc5eaa9f5337e5
