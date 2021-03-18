@@ -385,10 +385,7 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
       return Container();
     }
 
-    if (floowerModel.batteryCharging) {
-      icon = Icon(CupertinoIcons.battery_charging);
-    }
-    else if (level > 75) {
+    if (level > 75) {
       icon = Icon(CupertinoIcons.battery_full);
     }
     else if (level > 50) {
@@ -411,6 +408,7 @@ class _BatteryLevelIndicatorState extends State<_BatteryLevelIndicator> with Sin
         children: [
           SizedBox(width: 5),
           icon,
+          floowerModel.batteryCharging ? Icon(Icons.flash_on_sharp) : SizedBox()
           //SizedBox(width: 5),
           //Text("$level%", style: CupertinoTheme.of(context).textTheme.textStyle)
         ],
